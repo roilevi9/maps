@@ -1,0 +1,2604 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_e96014b1a9d978e67686ccfc01ed7859 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+                background: white; padding: 10px; border-radius: 5px; z-index: 9999;
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.3); text-align: center;
+                font-size: 16px; font-weight: bold;">
+            ממוצע זמני עצירה בתחנות ובצמתים - 14/03/2025
+    </div>
+
+    <div style="position: fixed; bottom: 30px; left: 30px; background: white; padding: 10px;
+                border-radius: 5px; z-index: 9999; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);">
+        <h4 style="margin: 0; font-size: 14px; font-weight: bold;">מקרא</h4>
+        <p style="margin: 5px 0;">
+            <span style="display: inline-block; width: 12px; height: 12px; background: green;
+                            border-radius: 50%; margin-right: 5px;"></span>
+            ממוצע זמן עצירה בתחנות
+        </p>
+        <p style="margin: 5px 0;">
+            <span style="display: inline-block; width: 12px; height: 12px; background: blue;
+                            border-radius: 50%; margin-right: 5px;"></span>
+            ממוצע זמן עצירה בצמתים
+        </p>
+        <p style="margin: 5px 0;">
+             <span style="display: inline-block; width: 12px; height: 12px; background: red;
+                            border-radius: 50%; margin-right: 5px;"></span>
+            ממוצע זמן עצירה גבוה מ-90 שניות
+        </p>
+    </div>
+
+
+    <div style="position: fixed; top: 50px; right: 30px; background: white; padding: 10px;
+                border-radius: 5px; z-index: 9999; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+                text-align: right; direction: rtl;">
+        <h4 style="margin: 0; font-size: 14px; text-align: center; font-weight: bold;">בחר תאריך:</h4>
+        </p>
+
+        <label for="day">יום:</label>
+        <select id="day">
+            <option value="All">All</option>
+            <script>
+                for (let i = 1; i <= 31; i++) {
+                    let formattedDay = i < 10 ? `0${i}` : i;
+                    document.write(`<option value="${formattedDay}">${formattedDay}</option>`);
+                }
+             </script>
+        </select>
+
+        <label for="month">חודש:</label>
+        <select id="month">
+            <script>
+                for (let i = 1; i <= 12; i++) {
+                    let option = document.createElement("option");
+                    option.value = i;
+                    option.text = i;
+                    document.getElementById("month").appendChild(option);
+                }
+            </script>
+        </select>
+
+        <label for="year">שנה:</label>
+        <select id="year">
+            <script>
+                let currentYear = new Date().getFullYear();
+                for (let i = currentYear; i <= currentYear + 5; i++) {
+                    let option = document.createElement("option");
+                    option.value = i;
+                    option.text = i;
+                    document.getElementById("year").appendChild(option);
+                }
+            </script>
+        </select>
+
+        <br><br>
+        <button onclick="goToDate()" style="display: block; margin: 10px auto 0 auto;">עבור לתאריך</button>
+    </div>
+
+    <script>
+        function goToDate() {
+            let day2 = document.getElementById("day").value;
+            let month2 = document.getElementById("month").value;
+            let year2 = document.getElementById("year").value;
+
+            month2 = month2.padStart(2, '0');
+
+            let baseURL = "https://roilevi9.github.io/maps/Train_Stops_Map_";
+
+            let dayPart = day2 === "All" ? "All" : day2;
+
+            // יצירת הקישור עם הפרמטרים שנבחרו
+            let newURL = `${baseURL}${dayPart}_${month2}_${year2}.html`;
+
+            // ניווט לקישור החדש
+            window.location.href = newURL;
+        }
+    </script>
+
+    
+    
+            <div class="folium-map" id="map_e96014b1a9d978e67686ccfc01ed7859" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_e96014b1a9d978e67686ccfc01ed7859 = L.map(
+                "map_e96014b1a9d978e67686ccfc01ed7859",
+                {
+                    center: [31.793585377611432, 35.20886954518406],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 12,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_8cc8f8170b06599444e9444ad328c42f = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors", "detectRetina": false, "maxNativeZoom": 19, "maxZoom": 19, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            );
+        
+    
+            tile_layer_8cc8f8170b06599444e9444ad328c42f.addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+            var circle_marker_51aef50492afa63ce84d69e6f6d6c078 = L.circleMarker(
+                [31.7569501, 35.1599374],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_f84bc41bdee3824a8e42d22b1f0e61db = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_3ff853d432abbafd91d32be5aa4110e9 = $(`<div id="html_3ff853d432abbafd91d32be5aa4110e9" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת אורה<br><b>זמן עצירה ממוצע:</b> 19 שניות<br><b>זמן עצירה מקסימלי:</b> 90 שניות</div>`)[0];
+                popup_f84bc41bdee3824a8e42d22b1f0e61db.setContent(html_3ff853d432abbafd91d32be5aa4110e9);
+            
+        
+
+        circle_marker_51aef50492afa63ce84d69e6f6d6c078.bindPopup(popup_f84bc41bdee3824a8e42d22b1f0e61db)
+        ;
+
+        
+    
+    
+            var circle_marker_c9a9b8be38d25f70588be1827ded6383 = L.circleMarker(
+                [31.757091, 35.160737],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_9f92f645182cec58d18570a7abea6f89 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_a11e6e1564dbe97e38a857d6e8dcc320 = $(`<div id="html_a11e6e1564dbe97e38a857d6e8dcc320" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת הנרייטה סולד - פנמה<br><b>מספר דגימות:</b> 179<br><b>זמן עצירה ממוצע:</b> 19 שניות<br><b>זמן עצירה מקסימלי:</b> 124 שניות</div>`)[0];
+                popup_9f92f645182cec58d18570a7abea6f89.setContent(html_a11e6e1564dbe97e38a857d6e8dcc320);
+            
+        
+
+        circle_marker_c9a9b8be38d25f70588be1827ded6383.bindPopup(popup_9f92f645182cec58d18570a7abea6f89)
+        ;
+
+        
+    
+    
+            var circle_marker_ec441e14358a21719aac5ac9f8709a1b = L.circleMarker(
+                [31.757159, 35.159348],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c35e52ea22105a41adc50f413e126f0b = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_7daa6af43b8b8d999521bcfc98f68487 = $(`<div id="html_7daa6af43b8b8d999521bcfc98f68487" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת הנרייטה סולד - 3877<br><b>מספר דגימות:</b> 201<br><b>זמן עצירה ממוצע:</b> 20 שניות<br><b>זמן עצירה מקסימלי:</b> 70 שניות</div>`)[0];
+                popup_c35e52ea22105a41adc50f413e126f0b.setContent(html_7daa6af43b8b8d999521bcfc98f68487);
+            
+        
+
+        circle_marker_ec441e14358a21719aac5ac9f8709a1b.bindPopup(popup_c35e52ea22105a41adc50f413e126f0b)
+        ;
+
+        
+    
+    
+            var circle_marker_b2651cdbfebe25039eb77f8e6141d037 = L.circleMarker(
+                [31.758017, 35.158943],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_9d583d3d77c1c4b811e79f271f974913 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_2cc7973085ed4efb00ffa50d2efa2129 = $(`<div id="html_2cc7973085ed4efb00ffa50d2efa2129" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת הנרייטה סולד - קלמן יעקב מן<br><b>מספר דגימות:</b> 17<br><b>זמן עצירה ממוצע:</b> 19 שניות<br><b>זמן עצירה מקסימלי:</b> 33 שניות</div>`)[0];
+                popup_9d583d3d77c1c4b811e79f271f974913.setContent(html_2cc7973085ed4efb00ffa50d2efa2129);
+            
+        
+
+        circle_marker_b2651cdbfebe25039eb77f8e6141d037.bindPopup(popup_9d583d3d77c1c4b811e79f271f974913)
+        ;
+
+        
+    
+    
+            var circle_marker_79a04b2a41de7b1890d70e779badb1ce = L.circleMarker(
+                [31.7598605, 35.1681062],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c486dec5d9308b1ced9365e6263a3200 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_c84ef2ec245db85901d6ba0408a9b193 = $(`<div id="html_c84ef2ec245db85901d6ba0408a9b193" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> הנרייטה סאלד – מזרח<br><b>זמן עצירה ממוצע:</b> 16 שניות<br><b>זמן עצירה מקסימלי:</b> 57 שניות</div>`)[0];
+                popup_c486dec5d9308b1ced9365e6263a3200.setContent(html_c84ef2ec245db85901d6ba0408a9b193);
+            
+        
+
+        circle_marker_79a04b2a41de7b1890d70e779badb1ce.bindPopup(popup_c486dec5d9308b1ced9365e6263a3200)
+        ;
+
+        
+    
+    
+            var circle_marker_a886f39d9727768c8f11d1a522b5cdb2 = L.circleMarker(
+                [31.7599305, 35.1640984],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_f2f0860a07c21f3b4ba4a5b38716cf63 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_e48dbe87b376260803bed6dfd27d9d67 = $(`<div id="html_e48dbe87b376260803bed6dfd27d9d67" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> קריית מנחם<br><b>זמן עצירה ממוצע:</b> 13 שניות<br><b>זמן עצירה מקסימלי:</b> 47 שניות</div>`)[0];
+                popup_f2f0860a07c21f3b4ba4a5b38716cf63.setContent(html_e48dbe87b376260803bed6dfd27d9d67);
+            
+        
+
+        circle_marker_a886f39d9727768c8f11d1a522b5cdb2.bindPopup(popup_f2f0860a07c21f3b4ba4a5b38716cf63)
+        ;
+
+        
+    
+    
+            var circle_marker_6217d1522dadda4e6d14413534ff48b7 = L.circleMarker(
+                [31.760008, 35.168699],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_9f8e7ac7a9c226d72789bfa57b17f567 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_9ad30647673a799c98a97348fdd00b03 = $(`<div id="html_9ad30647673a799c98a97348fdd00b03" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת הנרייטה סולד - מקסיקו<br><b>מספר דגימות:</b> 50<br><b>זמן עצירה ממוצע:</b> 22 שניות<br><b>זמן עצירה מקסימלי:</b> 33 שניות</div>`)[0];
+                popup_9f8e7ac7a9c226d72789bfa57b17f567.setContent(html_9ad30647673a799c98a97348fdd00b03);
+            
+        
+
+        circle_marker_6217d1522dadda4e6d14413534ff48b7.bindPopup(popup_9f8e7ac7a9c226d72789bfa57b17f567)
+        ;
+
+        
+    
+    
+            var circle_marker_14e2e9264b4148b0480be89b3679941b = L.circleMarker(
+                [31.760057, 35.166754],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_3023724db9a1a95d396a33a676e36ba2 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_70d69881e471ab6c04b57ee6df6d6204 = $(`<div id="html_70d69881e471ab6c04b57ee6df6d6204" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת הנרייטה סולד - אלווין (ישראל אלווין)<br><b>מספר דגימות:</b> 5<br><b>זמן עצירה ממוצע:</b> 11 שניות<br><b>זמן עצירה מקסימלי:</b> 11 שניות</div>`)[0];
+                popup_3023724db9a1a95d396a33a676e36ba2.setContent(html_70d69881e471ab6c04b57ee6df6d6204);
+            
+        
+
+        circle_marker_14e2e9264b4148b0480be89b3679941b.bindPopup(popup_3023724db9a1a95d396a33a676e36ba2)
+        ;
+
+        
+    
+    
+            var circle_marker_a425aaf27a127df2da029ea6cb7c3360 = L.circleMarker(
+                [31.760729, 35.165508],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_8a2de044a6dda58b457adfda8a2a7558 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_b1e425fa43d13663fe069c8d735bbad3 = $(`<div id="html_b1e425fa43d13663fe069c8d735bbad3" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת הנרייטה סולד - אלווין (ישראל אלווין) - מעקף<br><b>מספר דגימות:</b> 12<br><b>זמן עצירה ממוצע:</b> 18 שניות<br><b>זמן עצירה מקסימלי:</b> 28 שניות</div>`)[0];
+                popup_8a2de044a6dda58b457adfda8a2a7558.setContent(html_b1e425fa43d13663fe069c8d735bbad3);
+            
+        
+
+        circle_marker_a425aaf27a127df2da029ea6cb7c3360.bindPopup(popup_8a2de044a6dda58b457adfda8a2a7558)
+        ;
+
+        
+    
+    
+            var circle_marker_2e1a21b1f14d26b4e5d7804f61328d16 = L.circleMarker(
+                [31.76166, 35.170649],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_52b4387576aed843062affe23d2e39dd = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_36dc29b953e6e9f54db02401238a5daf = $(`<div id="html_36dc29b953e6e9f54db02401238a5daf" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת הנרייטה סולד - תחנת מקסיקו<br><b>מספר דגימות:</b> 3<br><b>זמן עצירה ממוצע:</b> 23 שניות<br><b>זמן עצירה מקסימלי:</b> 23 שניות</div>`)[0];
+                popup_52b4387576aed843062affe23d2e39dd.setContent(html_36dc29b953e6e9f54db02401238a5daf);
+            
+        
+
+        circle_marker_2e1a21b1f14d26b4e5d7804f61328d16.bindPopup(popup_52b4387576aed843062affe23d2e39dd)
+        ;
+
+        
+    
+    
+            var circle_marker_a50a289e65ca3dcdfc0c62a006f6f03f = L.circleMarker(
+                [31.7619111, 35.1714614],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_b3a3b5a1339d5b3a72522d46f0a7d4ae = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_93e7c9acb912a97b60278bd0bc99fbe3 = $(`<div id="html_93e7c9acb912a97b60278bd0bc99fbe3" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> גן המפלצת<br><b>זמן עצירה ממוצע:</b> 17 שניות<br><b>זמן עצירה מקסימלי:</b> 80 שניות</div>`)[0];
+                popup_b3a3b5a1339d5b3a72522d46f0a7d4ae.setContent(html_93e7c9acb912a97b60278bd0bc99fbe3);
+            
+        
+
+        circle_marker_a50a289e65ca3dcdfc0c62a006f6f03f.bindPopup(popup_b3a3b5a1339d5b3a72522d46f0a7d4ae)
+        ;
+
+        
+    
+    
+            var circle_marker_e45341c6453a2ced7004f07a01fef347 = L.circleMarker(
+                [31.762131, 35.172062],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_12f7ea4fc8a5429548db61814acd3fc5 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_17a567b9653e81807ce503944b482922 = $(`<div id="html_17a567b9653e81807ce503944b482922" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת הנרייטה סולד - תחנת טהון<br><b>מספר דגימות:</b> 94<br><b>זמן עצירה ממוצע:</b> 22 שניות<br><b>זמן עצירה מקסימלי:</b> 38 שניות</div>`)[0];
+                popup_12f7ea4fc8a5429548db61814acd3fc5.setContent(html_17a567b9653e81807ce503944b482922);
+            
+        
+
+        circle_marker_e45341c6453a2ced7004f07a01fef347.bindPopup(popup_12f7ea4fc8a5429548db61814acd3fc5)
+        ;
+
+        
+    
+    
+            var circle_marker_1857fca257941eb5bb5bd6268bd82904 = L.circleMarker(
+                [31.762308, 35.172305],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_164be5fc4a8b420b2f8b45de91d8deb3 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_e4ac1ae76bd9eb9b76d35056b27e14d5 = $(`<div id="html_e4ac1ae76bd9eb9b76d35056b27e14d5" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת ארתור הנטקה - הנרייטה סאלד - יעקב טהון<br><b>מספר דגימות:</b> 11<br><b>זמן עצירה ממוצע:</b> 24 שניות<br><b>זמן עצירה מקסימלי:</b> 34 שניות</div>`)[0];
+                popup_164be5fc4a8b420b2f8b45de91d8deb3.setContent(html_e4ac1ae76bd9eb9b76d35056b27e14d5);
+            
+        
+
+        circle_marker_1857fca257941eb5bb5bd6268bd82904.bindPopup(popup_164be5fc4a8b420b2f8b45de91d8deb3)
+        ;
+
+        
+    
+    
+            var circle_marker_3c1de9a4f00eaacb46112686355d6b63 = L.circleMarker(
+                [31.763809, 35.149498],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7.902249044117649, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_af2e723f2c929700246800ae2ff17de7 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_7a91bacf956c31fa8da50d14dbda84ee = $(`<div id="html_7a91bacf956c31fa8da50d14dbda84ee" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת בית החולים הדסה<br><b>מספר דגימות:</b> 17<br><b>זמן עצירה ממוצע:</b> 36 שניות<br><b>זמן עצירה מקסימלי:</b> 172 שניות</div>`)[0];
+                popup_af2e723f2c929700246800ae2ff17de7.setContent(html_7a91bacf956c31fa8da50d14dbda84ee);
+            
+        
+
+        circle_marker_3c1de9a4f00eaacb46112686355d6b63.bindPopup(popup_af2e723f2c929700246800ae2ff17de7)
+        ;
+
+        
+    
+    
+            var circle_marker_403738fef072e49eca5ef9ae7dd7f3d7 = L.circleMarker(
+                [31.763898, 35.150489],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_ed04b8c35a463811fb5f5ea81f605aaa = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_abbba37fc70c4be880beafbfbd14c0b2 = $(`<div id="html_abbba37fc70c4be880beafbfbd14c0b2" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת קלמן יעקב מן - כיכר שושנה בירן<br><b>מספר דגימות:</b> 36<br><b>זמן עצירה ממוצע:</b> 31 שניות<br><b>זמן עצירה מקסימלי:</b> 174 שניות</div>`)[0];
+                popup_ed04b8c35a463811fb5f5ea81f605aaa.setContent(html_abbba37fc70c4be880beafbfbd14c0b2);
+            
+        
+
+        circle_marker_403738fef072e49eca5ef9ae7dd7f3d7.bindPopup(popup_ed04b8c35a463811fb5f5ea81f605aaa)
+        ;
+
+        
+    
+    
+            var circle_marker_4d0a3564767d5da964dc5abb088e78b3 = L.circleMarker(
+                [31.7641084, 35.1511745],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_ddf1aea8916452b7e5dbaff7877b0147 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_58b634443caa6c1dda9dc076db5886ee = $(`<div id="html_58b634443caa6c1dda9dc076db5886ee" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> בית הספר לרפואה<br><b>זמן עצירה ממוצע:</b> 21 שניות<br><b>זמן עצירה מקסימלי:</b> 148 שניות</div>`)[0];
+                popup_ddf1aea8916452b7e5dbaff7877b0147.setContent(html_58b634443caa6c1dda9dc076db5886ee);
+            
+        
+
+        circle_marker_4d0a3564767d5da964dc5abb088e78b3.bindPopup(popup_ddf1aea8916452b7e5dbaff7877b0147)
+        ;
+
+        
+    
+    
+            var circle_marker_4201366062d89aa31e96eb013c89ee79 = L.circleMarker(
+                [31.7647287, 35.1476289],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7.765887573529413, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_5b489815de1c5a6d92272e18f2450892 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_98971aa60aa12bce8780149d0da9e39f = $(`<div id="html_98971aa60aa12bce8780149d0da9e39f" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> הדסה עין כרם<br><b>זמן עצירה ממוצע:</b> 35 שניות<br><b>זמן עצירה מקסימלי:</b> 169 שניות</div>`)[0];
+                popup_5b489815de1c5a6d92272e18f2450892.setContent(html_98971aa60aa12bce8780149d0da9e39f);
+            
+        
+
+        circle_marker_4201366062d89aa31e96eb013c89ee79.bindPopup(popup_5b489815de1c5a6d92272e18f2450892)
+        ;
+
+        
+    
+    
+            var circle_marker_a7ad7483f407f7c4936386af74d7dc3e = L.circleMarker(
+                [31.766247, 35.174474],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c7849669e1f14a80e017bd49a68dc273 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_711fa595d131033ed297dd1a16ce6b9f = $(`<div id="html_711fa595d131033ed297dd1a16ce6b9f" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת ארתור הנטקה - הרב חיים חביב<br><b>מספר דגימות:</b> 27<br><b>זמן עצירה ממוצע:</b> 15 שניות<br><b>זמן עצירה מקסימלי:</b> 22 שניות</div>`)[0];
+                popup_c7849669e1f14a80e017bd49a68dc273.setContent(html_711fa595d131033ed297dd1a16ce6b9f);
+            
+        
+
+        circle_marker_a7ad7483f407f7c4936386af74d7dc3e.bindPopup(popup_c7849669e1f14a80e017bd49a68dc273)
+        ;
+
+        
+    
+    
+            var circle_marker_e19c8ac6925f3a48001d3b34184b01a1 = L.circleMarker(
+                [31.76695462, 35.17447159],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_6a00abae14a2544c61d8c85153511ba0 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_688aafc916609f6a617dfe05b2f972d9 = $(`<div id="html_688aafc916609f6a617dfe05b2f972d9" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> קריית היובל – מערב<br><b>זמן עצירה ממוצע:</b> 14 שניות<br><b>זמן עצירה מקסימלי:</b> 54 שניות</div>`)[0];
+                popup_6a00abae14a2544c61d8c85153511ba0.setContent(html_688aafc916609f6a617dfe05b2f972d9);
+            
+        
+
+        circle_marker_e19c8ac6925f3a48001d3b34184b01a1.bindPopup(popup_6a00abae14a2544c61d8c85153511ba0)
+        ;
+
+        
+    
+    
+            var circle_marker_0b8435839482613545b68122862ef465 = L.circleMarker(
+                [31.767931, 35.174328],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_db3341101e5c793433ff22037efa9542 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_d3fdb8bbf80d4f4b73a2250bf97290bf = $(`<div id="html_d3fdb8bbf80d4f4b73a2250bf97290bf" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת ארתור הנטקה - יצחק ניידיץ'<br><b>מספר דגימות:</b> 8<br><b>זמן עצירה ממוצע:</b> 31 שניות<br><b>זמן עצירה מקסימלי:</b> 61 שניות</div>`)[0];
+                popup_db3341101e5c793433ff22037efa9542.setContent(html_d3fdb8bbf80d4f4b73a2250bf97290bf);
+            
+        
+
+        circle_marker_0b8435839482613545b68122862ef465.bindPopup(popup_db3341101e5c793433ff22037efa9542)
+        ;
+
+        
+    
+    
+            var circle_marker_e6f1dc2589d76e3e826e0c007333a201 = L.circleMarker(
+                [31.768646, 35.178189],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_739a4c9c5e855f342a9483406b4a2cea = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_69aa679e7690b0b01a96580e55bf5068 = $(`<div id="html_69aa679e7690b0b01a96580e55bf5068" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת ארתור הנטקה - שמריהו לוין - ישראל זנגוויל<br><b>מספר דגימות:</b> 158<br><b>זמן עצירה ממוצע:</b> 17 שניות<br><b>זמן עצירה מקסימלי:</b> 84 שניות</div>`)[0];
+                popup_739a4c9c5e855f342a9483406b4a2cea.setContent(html_69aa679e7690b0b01a96580e55bf5068);
+            
+        
+
+        circle_marker_e6f1dc2589d76e3e826e0c007333a201.bindPopup(popup_739a4c9c5e855f342a9483406b4a2cea)
+        ;
+
+        
+    
+    
+            var circle_marker_dc5d169932ad8f59c161ad27ab6cd887 = L.circleMarker(
+                [31.76874057, 35.17761105],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_4cfc6c563752380f0a6f47f1cd993bda = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_131369cdb16b3764b3935133c5ef9b96 = $(`<div id="html_131369cdb16b3764b3935133c5ef9b96" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> שמריהו לוין<br><b>זמן עצירה ממוצע:</b> 15 שניות<br><b>זמן עצירה מקסימלי:</b> 107 שניות</div>`)[0];
+                popup_4cfc6c563752380f0a6f47f1cd993bda.setContent(html_131369cdb16b3764b3935133c5ef9b96);
+            
+        
+
+        circle_marker_dc5d169932ad8f59c161ad27ab6cd887.bindPopup(popup_4cfc6c563752380f0a6f47f1cd993bda)
+        ;
+
+        
+    
+    
+            var circle_marker_9c5517763d6e116c40bfe3afd2933b61 = L.circleMarker(
+                [31.770149, 35.18118],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_916a57d549e19b636d937a445f5dbe80 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_cd5ae2cf158d7d80e63cb716474c2b7c = $(`<div id="html_cd5ae2cf158d7d80e63cb716474c2b7c" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת קריית היובל - הרצל<br><b>מספר דגימות:</b> 10<br><b>זמן עצירה ממוצע:</b> 15 שניות<br><b>זמן עצירה מקסימלי:</b> 22 שניות</div>`)[0];
+                popup_916a57d549e19b636d937a445f5dbe80.setContent(html_cd5ae2cf158d7d80e63cb716474c2b7c);
+            
+        
+
+        circle_marker_9c5517763d6e116c40bfe3afd2933b61.bindPopup(popup_916a57d549e19b636d937a445f5dbe80)
+        ;
+
+        
+    
+    
+            var circle_marker_a870dbddd1fc327af088a5562b37ce74 = L.circleMarker(
+                [31.77085524, 35.18155446],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_23498a2a8399659a9e016cebcab2e89d = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_0df3632bab76c0cad0b91330c0f68ed6 = $(`<div id="html_0df3632bab76c0cad0b91330c0f68ed6" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> הר הרצל<br><b>זמן עצירה ממוצע:</b> 21 שניות<br><b>זמן עצירה מקסימלי:</b> 165 שניות</div>`)[0];
+                popup_23498a2a8399659a9e016cebcab2e89d.setContent(html_0df3632bab76c0cad0b91330c0f68ed6);
+            
+        
+
+        circle_marker_a870dbddd1fc327af088a5562b37ce74.bindPopup(popup_23498a2a8399659a9e016cebcab2e89d)
+        ;
+
+        
+    
+    
+            var circle_marker_076db350bf9fe44eaeac02f1b7bbff7b = L.circleMarker(
+                [31.771644, 35.181951],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_47ea3a2c356965cab2268d298e549925 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_9e806def0821650131de1e031b6b4870 = $(`<div id="html_9e806def0821650131de1e031b6b4870" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת הפסגה<br><b>מספר דגימות:</b> 2<br><b>זמן עצירה ממוצע:</b> 16 שניות<br><b>זמן עצירה מקסימלי:</b> 22 שניות</div>`)[0];
+                popup_47ea3a2c356965cab2268d298e549925.setContent(html_9e806def0821650131de1e031b6b4870);
+            
+        
+
+        circle_marker_076db350bf9fe44eaeac02f1b7bbff7b.bindPopup(popup_47ea3a2c356965cab2268d298e549925)
+        ;
+
+        
+    
+    
+            var circle_marker_a9153e92e8adac8ce3e11ad7b9a478c6 = L.circleMarker(
+                [31.773314, 35.182566],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_41fb22bbf5c5054052b0e98852f615b8 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_cdf5d6c9eaf3b09d0dcc3bf62e56f217 = $(`<div id="html_cdf5d6c9eaf3b09d0dcc3bf62e56f217" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת עוזיאל<br><b>מספר דגימות:</b> 2<br><b>זמן עצירה ממוצע:</b> 10 שניות<br><b>זמן עצירה מקסימלי:</b> 11 שניות</div>`)[0];
+                popup_41fb22bbf5c5054052b0e98852f615b8.setContent(html_cdf5d6c9eaf3b09d0dcc3bf62e56f217);
+            
+        
+
+        circle_marker_a9153e92e8adac8ce3e11ad7b9a478c6.bindPopup(popup_41fb22bbf5c5054052b0e98852f615b8)
+        ;
+
+        
+    
+    
+            var circle_marker_028f25adb5a9371e5443612ef1bc20e6 = L.circleMarker(
+                [31.77479, 35.183497],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_47048ac8c9f9a4dd5f9d6bdfd1f6604e = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_490ce18cafe01926489fc328846db3d5 = $(`<div id="html_490ce18cafe01926489fc328846db3d5" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שד' הרצל - בית הקברות הצבאי<br><b>מספר דגימות:</b> 1<br><b>זמן עצירה ממוצע:</b> 11 שניות<br><b>זמן עצירה מקסימלי:</b> 11 שניות</div>`)[0];
+                popup_47048ac8c9f9a4dd5f9d6bdfd1f6604e.setContent(html_490ce18cafe01926489fc328846db3d5);
+            
+        
+
+        circle_marker_028f25adb5a9371e5443612ef1bc20e6.bindPopup(popup_47048ac8c9f9a4dd5f9d6bdfd1f6604e)
+        ;
+
+        
+    
+    
+            var circle_marker_c4dc7e1403f6dcb90121fda12f0040f9 = L.circleMarker(
+                [31.775999, 35.184259],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_d0955968e864eb76bdfa6101606c5da4 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_8a23984455271845cf6da339852ed077 = $(`<div id="html_8a23984455271845cf6da339852ed077" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת בייט<br><b>מספר דגימות:</b> 16<br><b>זמן עצירה ממוצע:</b> 18 שניות<br><b>זמן עצירה מקסימלי:</b> 34 שניות</div>`)[0];
+                popup_d0955968e864eb76bdfa6101606c5da4.setContent(html_8a23984455271845cf6da339852ed077);
+            
+        
+
+        circle_marker_c4dc7e1403f6dcb90121fda12f0040f9.bindPopup(popup_d0955968e864eb76bdfa6101606c5da4)
+        ;
+
+        
+    
+    
+            var circle_marker_a613ac2dd9ff4921a3bcfe7df2a96de6 = L.circleMarker(
+                [31.7769373, 35.18502705],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_0cfec3c41f2c49076f7a88a986df46f8 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_af3bc302b8ca07416430fd815363858a = $(`<div id="html_af3bc302b8ca07416430fd815363858a" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> יפה נוף<br><b>זמן עצירה ממוצע:</b> 18 שניות<br><b>זמן עצירה מקסימלי:</b> 59 שניות</div>`)[0];
+                popup_0cfec3c41f2c49076f7a88a986df46f8.setContent(html_af3bc302b8ca07416430fd815363858a);
+            
+        
+
+        circle_marker_a613ac2dd9ff4921a3bcfe7df2a96de6.bindPopup(popup_0cfec3c41f2c49076f7a88a986df46f8)
+        ;
+
+        
+    
+    
+            var circle_marker_f5b630f0b417890177f952be6c34fc0b = L.circleMarker(
+                [31.777701, 35.18572],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_9c76f39d193bec9538589b5fec3b13bf = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_4c9a83b2d4d6db52202fa59cc37ebcec = $(`<div id="html_4c9a83b2d4d6db52202fa59cc37ebcec" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שד' הרצל - אהרונוב<br><b>מספר דגימות:</b> 3<br><b>זמן עצירה ממוצע:</b> 11 שניות<br><b>זמן עצירה מקסימלי:</b> 11 שניות</div>`)[0];
+                popup_9c76f39d193bec9538589b5fec3b13bf.setContent(html_4c9a83b2d4d6db52202fa59cc37ebcec);
+            
+        
+
+        circle_marker_f5b630f0b417890177f952be6c34fc0b.bindPopup(popup_9c76f39d193bec9538589b5fec3b13bf)
+        ;
+
+        
+    
+    
+            var circle_marker_10571ba2bd3b69ed0cd3360a14165002 = L.circleMarker(
+                [31.778518, 35.186569],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_d63b97bd20776d8d22b831956fbcd78c = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_17d7bcfe8587d1d48666a67129cd3054 = $(`<div id="html_17d7bcfe8587d1d48666a67129cd3054" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שד' הרצל - המייסדים<br><b>מספר דגימות:</b> 4<br><b>זמן עצירה ממוצע:</b> 13 שניות<br><b>זמן עצירה מקסימלי:</b> 18 שניות</div>`)[0];
+                popup_d63b97bd20776d8d22b831956fbcd78c.setContent(html_17d7bcfe8587d1d48666a67129cd3054);
+            
+        
+
+        circle_marker_10571ba2bd3b69ed0cd3360a14165002.bindPopup(popup_d63b97bd20776d8d22b831956fbcd78c)
+        ;
+
+        
+    
+    
+            var circle_marker_c605350231f5ec8fc94d02c778bf7692 = L.circleMarker(
+                [31.778909, 35.224962],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_a94747bb83d5e73eda49904fb3c25348 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_326f41c16e386b75f7933b2e4943cdb6 = $(`<div id="html_326f41c16e386b75f7933b2e4943cdb6" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת ככר צה"ל<br><b>מספר דגימות:</b> 83<br><b>זמן עצירה ממוצע:</b> 24 שניות<br><b>זמן עצירה מקסימלי:</b> 111 שניות</div>`)[0];
+                popup_a94747bb83d5e73eda49904fb3c25348.setContent(html_326f41c16e386b75f7933b2e4943cdb6);
+            
+        
+
+        circle_marker_c605350231f5ec8fc94d02c778bf7692.bindPopup(popup_a94747bb83d5e73eda49904fb3c25348)
+        ;
+
+        
+    
+    
+            var circle_marker_3ca28cb265b9d3915b4c3d4bf3d74fdf = L.circleMarker(
+                [31.779479, 35.226089],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_5ff179c16d98103f0efb4d17aac313b2 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_7908541c7f133fe2c87de766a97565a2 = $(`<div id="html_7908541c7f133fe2c87de766a97565a2" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת השער החדש<br><b>מספר דגימות:</b> 36<br><b>זמן עצירה ממוצע:</b> 28 שניות<br><b>זמן עצירה מקסימלי:</b> 86 שניות</div>`)[0];
+                popup_5ff179c16d98103f0efb4d17aac313b2.setContent(html_7908541c7f133fe2c87de766a97565a2);
+            
+        
+
+        circle_marker_3ca28cb265b9d3915b4c3d4bf3d74fdf.bindPopup(popup_5ff179c16d98103f0efb4d17aac313b2)
+        ;
+
+        
+    
+    
+            var circle_marker_63fb505d8a73f78590966902e35b669b = L.circleMarker(
+                [31.77957764, 35.22399595],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_ba539709283b9a3c0be6a8616d01265b = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_102c246f1f69e6757f5a3d585bdb8beb = $(`<div id="html_102c246f1f69e6757f5a3d585bdb8beb" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> העירייה<br><b>זמן עצירה ממוצע:</b> 27 שניות<br><b>זמן עצירה מקסימלי:</b> 162 שניות</div>`)[0];
+                popup_ba539709283b9a3c0be6a8616d01265b.setContent(html_102c246f1f69e6757f5a3d585bdb8beb);
+            
+        
+
+        circle_marker_63fb505d8a73f78590966902e35b669b.bindPopup(popup_ba539709283b9a3c0be6a8616d01265b)
+        ;
+
+        
+    
+    
+            var circle_marker_7478b5997c567072174521c240098116 = L.circleMarker(
+                [31.780159, 35.187987],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_7ac3d67d36a486aa8079395cf74c39c8 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_5051da9870b77c856dc2ed3a6519c684 = $(`<div id="html_5051da9870b77c856dc2ed3a6519c684" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שד' הרצל - הארזים<br><b>מספר דגימות:</b> 73<br><b>זמן עצירה ממוצע:</b> 24 שניות<br><b>זמן עצירה מקסימלי:</b> 44 שניות</div>`)[0];
+                popup_7ac3d67d36a486aa8079395cf74c39c8.setContent(html_5051da9870b77c856dc2ed3a6519c684);
+            
+        
+
+        circle_marker_7478b5997c567072174521c240098116.bindPopup(popup_7ac3d67d36a486aa8079395cf74c39c8)
+        ;
+
+        
+    
+    
+            var circle_marker_d4bd471e2277735aadc5e81c6682aa95 = L.circleMarker(
+                [31.78061493, 35.18831448],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_456e7fdfd974b375f9098b78ac22b470 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_8f445193f5ec906b40722431df23d239 = $(`<div id="html_8f445193f5ec906b40722431df23d239" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> כיכר דניה<br><b>זמן עצירה ממוצע:</b> 18 שניות<br><b>זמן עצירה מקסימלי:</b> 119 שניות</div>`)[0];
+                popup_456e7fdfd974b375f9098b78ac22b470.setContent(html_8f445193f5ec906b40722431df23d239);
+            
+        
+
+        circle_marker_d4bd471e2277735aadc5e81c6682aa95.bindPopup(popup_456e7fdfd974b375f9098b78ac22b470)
+        ;
+
+        
+    
+    
+            var circle_marker_37a22aebb927c473f06a340eab53c641 = L.circleMarker(
+                [31.781466, 35.228321],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_f5878928884f0c2fae60508525df8344 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_3f74a0b08911abbf1e7db003577ccb03 = $(`<div id="html_3f74a0b08911abbf1e7db003577ccb03" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת כביש מס' 1 - סולטן סולימן<br><b>מספר דגימות:</b> 30<br><b>זמן עצירה ממוצע:</b> 32 שניות<br><b>זמן עצירה מקסימלי:</b> 95 שניות</div>`)[0];
+                popup_f5878928884f0c2fae60508525df8344.setContent(html_3f74a0b08911abbf1e7db003577ccb03);
+            
+        
+
+        circle_marker_37a22aebb927c473f06a340eab53c641.bindPopup(popup_f5878928884f0c2fae60508525df8344)
+        ;
+
+        
+    
+    
+            var circle_marker_af9962e13dbb80063ced4c11c0c356f3 = L.circleMarker(
+                [31.78248697, 35.22784092],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_45acf23b00dd93fba021cbb8e7facb20 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_1472191f5329da2a86ae9a99c6b5291f = $(`<div id="html_1472191f5329da2a86ae9a99c6b5291f" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> שער שכם<br><b>זמן עצירה ממוצע:</b> 26 שניות<br><b>זמן עצירה מקסימלי:</b> 108 שניות</div>`)[0];
+                popup_45acf23b00dd93fba021cbb8e7facb20.setContent(html_1472191f5329da2a86ae9a99c6b5291f);
+            
+        
+
+        circle_marker_af9962e13dbb80063ced4c11c0c356f3.bindPopup(popup_45acf23b00dd93fba021cbb8e7facb20)
+        ;
+
+        
+    
+    
+            var circle_marker_96b712b66223f7f73f3a105092f54401 = L.circleMarker(
+                [31.78277795, 35.1914007],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_e236d436da64efd887f3baa336460e4c = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_d10d406e964d62e396b76e494ccb2cb9 = $(`<div id="html_d10d406e964d62e396b76e494ccb2cb9" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> החלוץ<br><b>זמן עצירה ממוצע:</b> 17 שניות<br><b>זמן עצירה מקסימלי:</b> 57 שניות</div>`)[0];
+                popup_e236d436da64efd887f3baa336460e4c.setContent(html_d10d406e964d62e396b76e494ccb2cb9);
+            
+        
+
+        circle_marker_96b712b66223f7f73f3a105092f54401.bindPopup(popup_e236d436da64efd887f3baa336460e4c)
+        ;
+
+        
+    
+    
+            var circle_marker_1027be3a8203961e96c9bcb023583ee9 = L.circleMarker(
+                [31.782788, 35.192296],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_3f5dc321db9b083ef72bfc92475a34b7 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_272ba8e9d311b3d13ea917006fd76ed0 = $(`<div id="html_272ba8e9d311b3d13ea917006fd76ed0" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת האפט<br><b>מספר דגימות:</b> 26<br><b>זמן עצירה ממוצע:</b> 21 שניות<br><b>זמן עצירה מקסימלי:</b> 47 שניות</div>`)[0];
+                popup_3f5dc321db9b083ef72bfc92475a34b7.setContent(html_272ba8e9d311b3d13ea917006fd76ed0);
+            
+        
+
+        circle_marker_1027be3a8203961e96c9bcb023583ee9.bindPopup(popup_3f5dc321db9b083ef72bfc92475a34b7)
+        ;
+
+        
+    
+    
+            var circle_marker_c3a5480bd99eb73bf6276da4e350aa6d = L.circleMarker(
+                [31.78283599, 35.21833007],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_4ea0f1a56c277357bfcb0e5ea27efe6a = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_a6cce0baa02ceb9adf7f95a1498eca7c = $(`<div id="html_a6cce0baa02ceb9adf7f95a1498eca7c" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> יפו – מרכז<br><b>זמן עצירה ממוצע:</b> 29 שניות<br><b>זמן עצירה מקסימלי:</b> 103 שניות</div>`)[0];
+                popup_4ea0f1a56c277357bfcb0e5ea27efe6a.setContent(html_a6cce0baa02ceb9adf7f95a1498eca7c);
+            
+        
+
+        circle_marker_c3a5480bd99eb73bf6276da4e350aa6d.bindPopup(popup_4ea0f1a56c277357bfcb0e5ea27efe6a)
+        ;
+
+        
+    
+    
+            var circle_marker_d312269428175a427918a06988a2a388 = L.circleMarker(
+                [31.782861, 35.190982],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_b9e862dc0cab4515750f3645cdf1dbca = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_ae750df7825f2530c2abcfbb79cef86d = $(`<div id="html_ae750df7825f2530c2abcfbb79cef86d" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - החלוץ<br><b>מספר דגימות:</b> 12<br><b>זמן עצירה ממוצע:</b> 22 שניות<br><b>זמן עצירה מקסימלי:</b> 51 שניות</div>`)[0];
+                popup_b9e862dc0cab4515750f3645cdf1dbca.setContent(html_ae750df7825f2530c2abcfbb79cef86d);
+            
+        
+
+        circle_marker_d312269428175a427918a06988a2a388.bindPopup(popup_b9e862dc0cab4515750f3645cdf1dbca)
+        ;
+
+        
+    
+    
+            var circle_marker_bee0571babc92747725de03fdcbce171 = L.circleMarker(
+                [31.783224, 35.21779],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 8.685329338235293, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_fa4d8afcb66df375bcbc8bdef0e6e345 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_855085104f87a0bb6527a7a26ebcbeec = $(`<div id="html_855085104f87a0bb6527a7a26ebcbeec" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת רח' יפו - קינג ג'ורג'<br><b>מספר דגימות:</b> 83<br><b>זמן עצירה ממוצע:</b> 39 שניות<br><b>זמן עצירה מקסימלי:</b> 137 שניות</div>`)[0];
+                popup_fa4d8afcb66df375bcbc8bdef0e6e345.setContent(html_855085104f87a0bb6527a7a26ebcbeec);
+            
+        
+
+        circle_marker_bee0571babc92747725de03fdcbce171.bindPopup(popup_fa4d8afcb66df375bcbc8bdef0e6e345)
+        ;
+
+        
+    
+    
+            var circle_marker_068c86c2925402d1df33de4f69f9e76d = L.circleMarker(
+                [31.783254, 35.194747],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_96dadd9f3e0cf54c5e4ab8eace6e106a = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_6b384f1cab1d9295a4f76a8e4da646c5 = $(`<div id="html_6b384f1cab1d9295a4f76a8e4da646c5" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> ד' הרצל - רופין<br><b>מספר דגימות:</b> 5<br><b>זמן עצירה ממוצע:</b> 11 שניות<br><b>זמן עצירה מקסימלי:</b> 11 שניות</div>`)[0];
+                popup_96dadd9f3e0cf54c5e4ab8eace6e106a.setContent(html_6b384f1cab1d9295a4f76a8e4da646c5);
+            
+        
+
+        circle_marker_068c86c2925402d1df33de4f69f9e76d.bindPopup(popup_96dadd9f3e0cf54c5e4ab8eace6e106a)
+        ;
+
+        
+    
+    
+            var circle_marker_6c868ff7f83049de174a04be766a827a = L.circleMarker(
+                [31.783505, 35.227312],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7.2457625735294116, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_0fe771bacd376a31ad29836a25e272b2 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_c6bc9c75403c9ec32a3c82493aba854e = $(`<div id="html_c6bc9c75403c9ec32a3c82493aba854e" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת כביש מס' 1 - הנביאים<br><b>מספר דגימות:</b> 59<br><b>זמן עצירה ממוצע:</b> 33 שניות<br><b>זמן עצירה מקסימלי:</b> 116 שניות</div>`)[0];
+                popup_0fe771bacd376a31ad29836a25e272b2.setContent(html_c6bc9c75403c9ec32a3c82493aba854e);
+            
+        
+
+        circle_marker_6c868ff7f83049de174a04be766a827a.bindPopup(popup_0fe771bacd376a31ad29836a25e272b2)
+        ;
+
+        
+    
+    
+            var circle_marker_68909e662c3d5d58a60de8d6e3d6f7f0 = L.circleMarker(
+                [31.784348, 35.196383],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_8407a4da5fc2574a7aa73f1046b829cb = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_8eefd4dc9211a662280847ca4c7c940d = $(`<div id="html_8eefd4dc9211a662280847ca4c7c940d" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> ד' הרצל - פיק<br><b>מספר דגימות:</b> 4<br><b>זמן עצירה ממוצע:</b> 22 שניות<br><b>זמן עצירה מקסימלי:</b> 33 שניות</div>`)[0];
+                popup_8407a4da5fc2574a7aa73f1046b829cb.setContent(html_8eefd4dc9211a662280847ca4c7c940d);
+            
+        
+
+        circle_marker_68909e662c3d5d58a60de8d6e3d6f7f0.bindPopup(popup_8407a4da5fc2574a7aa73f1046b829cb)
+        ;
+
+        
+    
+    
+            var circle_marker_ce9a0fc9cb18cabf483c975faaa48777 = L.circleMarker(
+                [31.78455399, 35.21516646],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_b7e3191feb44840eca4cea04719eff46 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_4d5ee7719a2a83051440eddfe17697c1 = $(`<div id="html_4d5ee7719a2a83051440eddfe17697c1" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> הדווידקה<br><b>זמן עצירה ממוצע:</b> 18 שניות<br><b>זמן עצירה מקסימלי:</b> 130 שניות</div>`)[0];
+                popup_b7e3191feb44840eca4cea04719eff46.setContent(html_4d5ee7719a2a83051440eddfe17697c1);
+            
+        
+
+        circle_marker_ce9a0fc9cb18cabf483c975faaa48777.bindPopup(popup_b7e3191feb44840eca4cea04719eff46)
+        ;
+
+        
+    
+    
+            var circle_marker_e31c957c8d2d6ef84b9af3a5e7bd812f = L.circleMarker(
+                [31.784757, 35.227371],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_0b859e23231c168d8bfec0d816eccb23 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_8224db7b0a344fbfaf68a2255ba49801 = $(`<div id="html_8224db7b0a344fbfaf68a2255ba49801" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת כביש מס' 1 - מנדלבאום<br><b>מספר דגימות:</b> 62<br><b>זמן עצירה ממוצע:</b> 18 שניות<br><b>זמן עצירה מקסימלי:</b> 82 שניות</div>`)[0];
+                popup_0b859e23231c168d8bfec0d816eccb23.setContent(html_8224db7b0a344fbfaf68a2255ba49801);
+            
+        
+
+        circle_marker_e31c957c8d2d6ef84b9af3a5e7bd812f.bindPopup(popup_0b859e23231c168d8bfec0d816eccb23)
+        ;
+
+        
+    
+    
+            var circle_marker_700a1a74975c8f71300b7f549bbb53a8 = L.circleMarker(
+                [31.784849, 35.214722],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_2e63409e45b531a1059b0836863063f3 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_545edc76c3b18645da13770518648f07 = $(`<div id="html_545edc76c3b18645da13770518648f07" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת רח' יפו - הנביאים<br><b>מספר דגימות:</b> 110<br><b>זמן עצירה ממוצע:</b> 30 שניות<br><b>זמן עצירה מקסימלי:</b> 100 שניות</div>`)[0];
+                popup_2e63409e45b531a1059b0836863063f3.setContent(html_545edc76c3b18645da13770518648f07);
+            
+        
+
+        circle_marker_700a1a74975c8f71300b7f549bbb53a8.bindPopup(popup_2e63409e45b531a1059b0836863063f3)
+        ;
+
+        
+    
+    
+            var circle_marker_240348a35f9fa6bdb4c2e50210895017 = L.circleMarker(
+                [31.785851, 35.197874],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_1326755c80942cb9a6c3b3d9cfae6cda = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_e65e33d4948e8fd5fe732c08423709dd = $(`<div id="html_e65e33d4948e8fd5fe732c08423709dd" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שד' הרצל - קריית משה<br><b>מספר דגימות:</b> 79<br><b>זמן עצירה ממוצע:</b> 24 שניות<br><b>זמן עצירה מקסימלי:</b> 61 שניות</div>`)[0];
+                popup_1326755c80942cb9a6c3b3d9cfae6cda.setContent(html_e65e33d4948e8fd5fe732c08423709dd);
+            
+        
+
+        circle_marker_240348a35f9fa6bdb4c2e50210895017.bindPopup(popup_1326755c80942cb9a6c3b3d9cfae6cda)
+        ;
+
+        
+    
+    
+            var circle_marker_f16057d36f03ab3128b391b8e40799c1 = L.circleMarker(
+                [31.785924, 35.211925],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 9.344299411764709, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_f18de7be13757935988393cfe8df8040 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_24e7a9e2d2912749c1f383b07018ed41 = $(`<div id="html_24e7a9e2d2912749c1f383b07018ed41" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת רח' יפו - בית יעקב<br><b>מספר דגימות:</b> 97<br><b>זמן עצירה ממוצע:</b> 42 שניות<br><b>זמן עצירה מקסימלי:</b> 179 שניות</div>`)[0];
+                popup_f18de7be13757935988393cfe8df8040.setContent(html_24e7a9e2d2912749c1f383b07018ed41);
+            
+        
+
+        circle_marker_f16057d36f03ab3128b391b8e40799c1.bindPopup(popup_f18de7be13757935988393cfe8df8040)
+        ;
+
+        
+    
+    
+            var circle_marker_b337908202f59158edd01d9420323911 = L.circleMarker(
+                [31.7859934, 35.2113974],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 8.025562500000001, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c1033b845f2e73faead034d447576995 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_874fd0449c331a3c24e349223542def9 = $(`<div id="html_874fd0449c331a3c24e349223542def9" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מחנה יהודה<br><b>זמן עצירה ממוצע:</b> 36 שניות<br><b>זמן עצירה מקסימלי:</b> 152 שניות</div>`)[0];
+                popup_c1033b845f2e73faead034d447576995.setContent(html_874fd0449c331a3c24e349223542def9);
+            
+        
+
+        circle_marker_b337908202f59158edd01d9420323911.bindPopup(popup_c1033b845f2e73faead034d447576995)
+        ;
+
+        
+    
+    
+            var circle_marker_2b2cdacb6ba0fa79dc7792046bf64659 = L.circleMarker(
+                [31.786203, 35.21088],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 11.488003014705882, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c0b1a9d8e25ed1eccd2f574d46eecc98 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_056324316f3b6470db9ffec024014e7e = $(`<div id="html_056324316f3b6470db9ffec024014e7e" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - מחנה יהודה<br><b>מספר דגימות:</b> 76<br><b>זמן עצירה ממוצע:</b> 52 שניות<br><b>זמן עצירה מקסימלי:</b> 176 שניות</div>`)[0];
+                popup_c0b1a9d8e25ed1eccd2f574d46eecc98.setContent(html_056324316f3b6470db9ffec024014e7e);
+            
+        
+
+        circle_marker_2b2cdacb6ba0fa79dc7792046bf64659.bindPopup(popup_c0b1a9d8e25ed1eccd2f574d46eecc98)
+        ;
+
+        
+    
+    
+            var circle_marker_2862e7ee2d813d0a5008b2285e09f7e0 = L.circleMarker(
+                [31.78620445, 35.19814455],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_befab728dec73ce63d73f14bd05234b2 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_2958c411ec50c398fad206f82ffa4068 = $(`<div id="html_2958c411ec50c398fad206f82ffa4068" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> קריית משה<br><b>זמן עצירה ממוצע:</b> 21 שניות<br><b>זמן עצירה מקסימלי:</b> 69 שניות</div>`)[0];
+                popup_befab728dec73ce63d73f14bd05234b2.setContent(html_2958c411ec50c398fad206f82ffa4068);
+            
+        
+
+        circle_marker_2862e7ee2d813d0a5008b2285e09f7e0.bindPopup(popup_befab728dec73ce63d73f14bd05234b2)
+        ;
+
+        
+    
+    
+            var circle_marker_9c2ce3d97e02244bb7897bd1a5e389fd = L.circleMarker(
+                [31.78631419, 35.22716195],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_5b6eb9694f7a12064a0b46a56fa39ba2 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_353af30b52351d3fda1edf2e43224faa = $(`<div id="html_353af30b52351d3fda1edf2e43224faa" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> שבטי ישראל<br><b>זמן עצירה ממוצע:</b> 16 שניות<br><b>זמן עצירה מקסימלי:</b> 48 שניות</div>`)[0];
+                popup_5b6eb9694f7a12064a0b46a56fa39ba2.setContent(html_353af30b52351d3fda1edf2e43224faa);
+            
+        
+
+        circle_marker_9c2ce3d97e02244bb7897bd1a5e389fd.bindPopup(popup_5b6eb9694f7a12064a0b46a56fa39ba2)
+        ;
+
+        
+    
+    
+            var circle_marker_a85aeb685392d05e6633faded3baaef7 = L.circleMarker(
+                [31.786763, 35.198676],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7.915966323529412, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_aab26252d49b30cab31b5cf24bc3dc8c = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_3fb3c52ae367ef106b8ffe00c7027312 = $(`<div id="html_3fb3c52ae367ef106b8ffe00c7027312" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שד' הרצל - בן דור<br><b>מספר דגימות:</b> 35<br><b>זמן עצירה ממוצע:</b> 36 שניות<br><b>זמן עצירה מקסימלי:</b> 76 שניות</div>`)[0];
+                popup_aab26252d49b30cab31b5cf24bc3dc8c.setContent(html_3fb3c52ae367ef106b8ffe00c7027312);
+            
+        
+
+        circle_marker_a85aeb685392d05e6633faded3baaef7.bindPopup(popup_aab26252d49b30cab31b5cf24bc3dc8c)
+        ;
+
+        
+    
+    
+            var circle_marker_1bbe90aff05944699da3ce7694787370 = L.circleMarker(
+                [31.787001, 35.209018],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7.4684872058823535, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_b3aaf151258280b19e095fd7a6ce33d6 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_20d9708ee190a32c6ac307471c624ecf = $(`<div id="html_20d9708ee190a32c6ac307471c624ecf" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת רח' יפו - שערי צדק<br><b>מספר דגימות:</b> 7<br><b>זמן עצירה ממוצע:</b> 34 שניות<br><b>זמן עצירה מקסימלי:</b> 84 שניות</div>`)[0];
+                popup_b3aaf151258280b19e095fd7a6ce33d6.setContent(html_20d9708ee190a32c6ac307471c624ecf);
+            
+        
+
+        circle_marker_1bbe90aff05944699da3ce7694787370.bindPopup(popup_b3aaf151258280b19e095fd7a6ce33d6)
+        ;
+
+        
+    
+    
+            var circle_marker_c4b0a508490ecccc60418019461bdf63 = L.circleMarker(
+                [31.787704, 35.207252],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_5076ff333b0a05c0f1e6e08a5a8182ea = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_4b0c62c62bad367318d63a3d79729596 = $(`<div id="html_4b0c62c62bad367318d63a3d79729596" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - הטורים<br><b>מספר דגימות:</b> 93<br><b>זמן עצירה ממוצע:</b> 31 שניות<br><b>זמן עצירה מקסימלי:</b> 78 שניות</div>`)[0];
+                popup_5076ff333b0a05c0f1e6e08a5a8182ea.setContent(html_4b0c62c62bad367318d63a3d79729596);
+            
+        
+
+        circle_marker_c4b0a508490ecccc60418019461bdf63.bindPopup(popup_5076ff333b0a05c0f1e6e08a5a8182ea)
+        ;
+
+        
+    
+    
+            var circle_marker_244bd9a6184c82149d7f13c0c923e13e = L.circleMarker(
+                [31.78789315, 35.206759],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_425456d92d900823d6a4b9ff9d8b4273 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_fc0caa3ae1107acfdc65ad1cb24bfc7e = $(`<div id="html_fc0caa3ae1107acfdc65ad1cb24bfc7e" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> הטורים<br><b>זמן עצירה ממוצע:</b> 22 שניות<br><b>זמן עצירה מקסימלי:</b> 70 שניות</div>`)[0];
+                popup_425456d92d900823d6a4b9ff9d8b4273.setContent(html_fc0caa3ae1107acfdc65ad1cb24bfc7e);
+            
+        
+
+        circle_marker_244bd9a6184c82149d7f13c0c923e13e.bindPopup(popup_425456d92d900823d6a4b9ff9d8b4273)
+        ;
+
+        
+    
+    
+            var circle_marker_b21b6c1d82059d0854db7afed9582a4e = L.circleMarker(
+                [31.788149, 35.206443],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c69a52b0f7d533093248b24e44bd087d = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_0127a8c80db1192267b058a8b938b2aa = $(`<div id="html_0127a8c80db1192267b058a8b938b2aa" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - מלון קייסר<br><b>מספר דגימות:</b> 13<br><b>זמן עצירה ממוצע:</b> 21 שניות<br><b>זמן עצירה מקסימלי:</b> 40 שניות</div>`)[0];
+                popup_c69a52b0f7d533093248b24e44bd087d.setContent(html_0127a8c80db1192267b058a8b938b2aa);
+            
+        
+
+        circle_marker_b21b6c1d82059d0854db7afed9582a4e.bindPopup(popup_c69a52b0f7d533093248b24e44bd087d)
+        ;
+
+        
+    
+    
+            var circle_marker_ca6d0a8398c9d84970f2f3abcc9ab5cd = L.circleMarker(
+                [31.788318, 35.202974],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 12.491349264705883, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_7a1f0ee88a7d48e07f0d654e2f7c5297 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_409759e20e96e6571994915c54be5aad = $(`<div id="html_409759e20e96e6571994915c54be5aad" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - רכבת יצחק נבון<br><b>מספר דגימות:</b> 51<br><b>זמן עצירה ממוצע:</b> 57 שניות<br><b>זמן עצירה מקסימלי:</b> 87 שניות</div>`)[0];
+                popup_7a1f0ee88a7d48e07f0d654e2f7c5297.setContent(html_409759e20e96e6571994915c54be5aad);
+            
+        
+
+        circle_marker_ca6d0a8398c9d84970f2f3abcc9ab5cd.bindPopup(popup_7a1f0ee88a7d48e07f0d654e2f7c5297)
+        ;
+
+        
+    
+    
+            var circle_marker_c65d64f45c3b050f2e6b1c6e8769d8aa = L.circleMarker(
+                [31.78839957, 35.20263212],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 9.175278088235295, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_f68dfe782ff9f4a19ec5f359356e7fc4 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_44ef02a9a6cbc00833027ba84d5773f4 = $(`<div id="html_44ef02a9a6cbc00833027ba84d5773f4" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> התחנה המרכזית<br><b>זמן עצירה ממוצע:</b> 42 שניות<br><b>זמן עצירה מקסימלי:</b> 174 שניות</div>`)[0];
+                popup_f68dfe782ff9f4a19ec5f359356e7fc4.setContent(html_44ef02a9a6cbc00833027ba84d5773f4);
+            
+        
+
+        circle_marker_c65d64f45c3b050f2e6b1c6e8769d8aa.bindPopup(popup_f68dfe782ff9f4a19ec5f359356e7fc4)
+        ;
+
+        
+    
+    
+            var circle_marker_2f926f6a9129a1ffd6da2538e7ca96a1 = L.circleMarker(
+                [31.788622, 35.205297],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_758b0395851b151f0af81ad792aa5e8e = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_bd60ea583abe201c7cdb37e0a5be68f7 = $(`<div id="html_bd60ea583abe201c7cdb37e0a5be68f7" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת יפו - נורדאו<br><b>מספר דגימות:</b> 5<br><b>זמן עצירה ממוצע:</b> 14 שניות<br><b>זמן עצירה מקסימלי:</b> 22 שניות</div>`)[0];
+                popup_758b0395851b151f0af81ad792aa5e8e.setContent(html_bd60ea583abe201c7cdb37e0a5be68f7);
+            
+        
+
+        circle_marker_2f926f6a9129a1ffd6da2538e7ca96a1.bindPopup(popup_758b0395851b151f0af81ad792aa5e8e)
+        ;
+
+        
+    
+    
+            var circle_marker_c8dcc46d42f51a49c59d0681b9a17698 = L.circleMarker(
+                [31.78863, 35.202033],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 8.391176470588237, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c90afffd6967a3babbe71e1791c3732f = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_415a7944f7787758e24c7a1baa0763d5 = $(`<div id="html_415a7944f7787758e24c7a1baa0763d5" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - תחנה מרכזית<br><b>מספר דגימות:</b> 50<br><b>זמן עצירה ממוצע:</b> 38 שניות<br><b>זמן עצירה מקסימלי:</b> 97 שניות</div>`)[0];
+                popup_c90afffd6967a3babbe71e1791c3732f.setContent(html_415a7944f7787758e24c7a1baa0763d5);
+            
+        
+
+        circle_marker_c8dcc46d42f51a49c59d0681b9a17698.bindPopup(popup_c90afffd6967a3babbe71e1791c3732f)
+        ;
+
+        
+    
+    
+            var circle_marker_e4099668a9b5045b4c48db13144d40b7 = L.circleMarker(
+                [31.789832, 35.226547],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_fa327a57db9836fd5ea2fcc11b65087a = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_2ff6a0b52b0c43cc506e7bc36748f3d5 = $(`<div id="html_2ff6a0b52b0c43cc506e7bc36748f3d5" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת כביש מס' 1 - זקס<br><b>מספר דגימות:</b> 8<br><b>זמן עצירה ממוצע:</b> 13 שניות<br><b>זמן עצירה מקסימלי:</b> 17 שניות</div>`)[0];
+                popup_fa327a57db9836fd5ea2fcc11b65087a.setContent(html_2ff6a0b52b0c43cc506e7bc36748f3d5);
+            
+        
+
+        circle_marker_e4099668a9b5045b4c48db13144d40b7.bindPopup(popup_fa327a57db9836fd5ea2fcc11b65087a)
+        ;
+
+        
+    
+    
+            var circle_marker_7b67bf744c152d48be5f8a9703df43ed = L.circleMarker(
+                [31.792158, 35.226376],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 9.558823455882354, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_d7c5e4658ebf4f7537188b3132ef83e9 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_030996c944d4474050a1ae0a732fecaf = $(`<div id="html_030996c944d4474050a1ae0a732fecaf" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת כביש מס' 1 - רק"ל<br><b>מספר דגימות:</b> 6<br><b>זמן עצירה ממוצע:</b> 43 שניות<br><b>זמן עצירה מקסימלי:</b> 133 שניות</div>`)[0];
+                popup_d7c5e4658ebf4f7537188b3132ef83e9.setContent(html_030996c944d4474050a1ae0a732fecaf);
+            
+        
+
+        circle_marker_7b67bf744c152d48be5f8a9703df43ed.bindPopup(popup_d7c5e4658ebf4f7537188b3132ef83e9)
+        ;
+
+        
+    
+    
+            var circle_marker_adc89491509ba34e919469acce865a1a = L.circleMarker(
+                [31.7930483, 35.22634424],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_dd3c493274e02bb067ccc6f547a7e3ce = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_24446a8a02457ed0e33be2feae547c10 = $(`<div id="html_24446a8a02457ed0e33be2feae547c10" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> שמעון הצדיק<br><b>זמן עצירה ממוצע:</b> 17 שניות<br><b>זמן עצירה מקסימלי:</b> 56 שניות</div>`)[0];
+                popup_dd3c493274e02bb067ccc6f547a7e3ce.setContent(html_24446a8a02457ed0e33be2feae547c10);
+            
+        
+
+        circle_marker_adc89491509ba34e919469acce865a1a.bindPopup(popup_dd3c493274e02bb067ccc6f547a7e3ce)
+        ;
+
+        
+    
+    
+            var circle_marker_284f27e625fa2d432a5c033115698b4b = L.circleMarker(
+                [31.79353, 35.226388],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_5ccea9634de4d1f714360caf6153d703 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_9d9c7c3a273d6905a8f85f8bdb7c057b = $(`<div id="html_9d9c7c3a273d6905a8f85f8bdb7c057b" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת כביש מס' 1 - שמעון הצדיק<br><b>מספר דגימות:</b> 79<br><b>זמן עצירה ממוצע:</b> 26 שניות<br><b>זמן עצירה מקסימלי:</b> 55 שניות</div>`)[0];
+                popup_5ccea9634de4d1f714360caf6153d703.setContent(html_9d9c7c3a273d6905a8f85f8bdb7c057b);
+            
+        
+
+        circle_marker_284f27e625fa2d432a5c033115698b4b.bindPopup(popup_5ccea9634de4d1f714360caf6153d703)
+        ;
+
+        
+    
+    
+            var circle_marker_67679756c89b48ead729639cada0318d = L.circleMarker(
+                [31.797656, 35.230558],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_02847f4931ee801a15225586864c1b8d = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_a5b962f21e6a026fb7d78483c8214666 = $(`<div id="html_a5b962f21e6a026fb7d78483c8214666" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת כביש מס' 1 - שרגאי<br><b>מספר דגימות:</b> 20<br><b>זמן עצירה ממוצע:</b> 27 שניות<br><b>זמן עצירה מקסימלי:</b> 57 שניות</div>`)[0];
+                popup_02847f4931ee801a15225586864c1b8d.setContent(html_a5b962f21e6a026fb7d78483c8214666);
+            
+        
+
+        circle_marker_67679756c89b48ead729639cada0318d.bindPopup(popup_02847f4931ee801a15225586864c1b8d)
+        ;
+
+        
+    
+    
+            var circle_marker_c8913fce5587670b845e296a59c958ef = L.circleMarker(
+                [31.798688, 35.231649],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_6986f62a802c09eb6bc55320de11a2b4 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_3b934d68e4e26e9dc7787007b2cea449 = $(`<div id="html_3b934d68e4e26e9dc7787007b2cea449" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת אוטובוסים גבעת התחמושת<br><b>מספר דגימות:</b> 85<br><b>זמן עצירה ממוצע:</b> 31 שניות<br><b>זמן עצירה מקסימלי:</b> 136 שניות</div>`)[0];
+                popup_6986f62a802c09eb6bc55320de11a2b4.setContent(html_3b934d68e4e26e9dc7787007b2cea449);
+            
+        
+
+        circle_marker_c8913fce5587670b845e296a59c958ef.bindPopup(popup_6986f62a802c09eb6bc55320de11a2b4)
+        ;
+
+        
+    
+    
+            var circle_marker_2f2ab78999aea3d6cc87451339b92a51 = L.circleMarker(
+                [31.79915487, 35.23207606],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_1965f62c68963c00c284e4a958e45a3e = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_c490d8dae844c9c133e45f6e376b02dd = $(`<div id="html_c490d8dae844c9c133e45f6e376b02dd" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> גבעת התחמושת<br><b>זמן עצירה ממוצע:</b> 24 שניות<br><b>זמן עצירה מקסימלי:</b> 173 שניות</div>`)[0];
+                popup_1965f62c68963c00c284e4a958e45a3e.setContent(html_c490d8dae844c9c133e45f6e376b02dd);
+            
+        
+
+        circle_marker_2f2ab78999aea3d6cc87451339b92a51.bindPopup(popup_1965f62c68963c00c284e4a958e45a3e)
+        ;
+
+        
+    
+    
+            var circle_marker_f666e3c853421b6161a12d6d20079792 = L.circleMarker(
+                [31.799838, 35.232504],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 11.966911764705882, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c7d14b435cadc88382ff308ddecdd6dd = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_784dabbd908513686b67cbad513cdb13 = $(`<div id="html_784dabbd908513686b67cbad513cdb13" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת כביש מס' 1 - שדרות אשכול<br><b>מספר דגימות:</b> 4<br><b>זמן עצירה ממוצע:</b> 54 שניות<br><b>זמן עצירה מקסימלי:</b> 100 שניות</div>`)[0];
+                popup_c7d14b435cadc88382ff308ddecdd6dd.setContent(html_784dabbd908513686b67cbad513cdb13);
+            
+        
+
+        circle_marker_f666e3c853421b6161a12d6d20079792.bindPopup(popup_c7d14b435cadc88382ff308ddecdd6dd)
+        ;
+
+        
+    
+    
+            var circle_marker_f1074537ccd6152dc76504da98f811c3 = L.circleMarker(
+                [31.804904, 35.234537],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 8.178953382352942, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_8fefe585b424099dfe8d47db2f2faa5a = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_a90a70bf4771b009a509dece5089eb60 = $(`<div id="html_a90a70bf4771b009a509dece5089eb60" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת כביש מס' 1 - ההגנה<br><b>מספר דגימות:</b> 77<br><b>זמן עצירה ממוצע:</b> 37 שניות<br><b>זמן עצירה מקסימלי:</b> 178 שניות</div>`)[0];
+                popup_8fefe585b424099dfe8d47db2f2faa5a.setContent(html_a90a70bf4771b009a509dece5089eb60);
+            
+        
+
+        circle_marker_f1074537ccd6152dc76504da98f811c3.bindPopup(popup_8fefe585b424099dfe8d47db2f2faa5a)
+        ;
+
+        
+    
+    
+            var circle_marker_299334977d8cd519d139181f145f0d70 = L.circleMarker(
+                [31.80548727, 35.23426792],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_6d8a203f53687605600050b2070bfca9 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_ab9011a6ff9755865476943ce7dcaefe = $(`<div id="html_ab9011a6ff9755865476943ce7dcaefe" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> גבעת המבתר<br><b>זמן עצירה ממוצע:</b> 29 שניות<br><b>זמן עצירה מקסימלי:</b> 164 שניות</div>`)[0];
+                popup_6d8a203f53687605600050b2070bfca9.setContent(html_ab9011a6ff9755865476943ce7dcaefe);
+            
+        
+
+        circle_marker_299334977d8cd519d139181f145f0d70.bindPopup(popup_6d8a203f53687605600050b2070bfca9)
+        ;
+
+        
+    
+    
+            var circle_marker_ac4858bf12b0fef49194d7801b9ecaa5 = L.circleMarker(
+                [31.80614, 35.234113],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 11.155462058823527, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_1da45dc7553a2d77bf48df26cdbf1c45 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_11adb0b50a0059eca0b8ace861cc08d0 = $(`<div id="html_11adb0b50a0059eca0b8ace861cc08d0" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת כביש מס' 1 - יגאל ידין<br><b>מספר דגימות:</b> 70<br><b>זמן עצירה ממוצע:</b> 51 שניות<br><b>זמן עצירה מקסימלי:</b> 165 שניות</div>`)[0];
+                popup_1da45dc7553a2d77bf48df26cdbf1c45.setContent(html_11adb0b50a0059eca0b8ace861cc08d0);
+            
+        
+
+        circle_marker_ac4858bf12b0fef49194d7801b9ecaa5.bindPopup(popup_1da45dc7553a2d77bf48df26cdbf1c45)
+        ;
+
+        
+    
+    
+            var circle_marker_7b4725e3edce641f1a43110338c9c0a1 = L.circleMarker(
+                [31.809413, 35.233451],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_57072fd9c67aa2cfaf9f2a607751f09d = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_788971b17844336c0167b50f7f21e836 = $(`<div id="html_788971b17844336c0167b50f7f21e836" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת דרך שועפאט - דרך ענתות<br><b>מספר דגימות:</b> 4<br><b>זמן עצירה ממוצע:</b> 14 שניות<br><b>זמן עצירה מקסימלי:</b> 17 שניות</div>`)[0];
+                popup_57072fd9c67aa2cfaf9f2a607751f09d.setContent(html_788971b17844336c0167b50f7f21e836);
+            
+        
+
+        circle_marker_7b4725e3edce641f1a43110338c9c0a1.bindPopup(popup_57072fd9c67aa2cfaf9f2a607751f09d)
+        ;
+
+        
+    
+    
+            var circle_marker_9ac838f28d6a8f0fc6da50fa8435c4ce = L.circleMarker(
+                [31.81118887, 35.23279673],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c81f041113aa996a9bc76186573e57eb = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_536782a1dd18d8a86b0ef789e29fb2ae = $(`<div id="html_536782a1dd18d8a86b0ef789e29fb2ae" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> א־סהל<br><b>זמן עצירה ממוצע:</b> 19 שניות<br><b>זמן עצירה מקסימלי:</b> 63 שניות</div>`)[0];
+                popup_c81f041113aa996a9bc76186573e57eb.setContent(html_536782a1dd18d8a86b0ef789e29fb2ae);
+            
+        
+
+        circle_marker_9ac838f28d6a8f0fc6da50fa8435c4ce.bindPopup(popup_c81f041113aa996a9bc76186573e57eb)
+        ;
+
+        
+    
+    
+            var circle_marker_96af5593ae737e2e342e028e0686ca35 = L.circleMarker(
+                [31.81145, 35.232389],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_142f71cbd53119ebdc33e1e23702afc9 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_a2311f67c7058571342340d35dc53dd4 = $(`<div id="html_a2311f67c7058571342340d35dc53dd4" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת דרך שועפאט - א-סהל<br><b>מספר דגימות:</b> 108<br><b>זמן עצירה ממוצע:</b> 23 שניות<br><b>זמן עצירה מקסימלי:</b> 50 שניות</div>`)[0];
+                popup_142f71cbd53119ebdc33e1e23702afc9.setContent(html_a2311f67c7058571342340d35dc53dd4);
+            
+        
+
+        circle_marker_96af5593ae737e2e342e028e0686ca35.bindPopup(popup_142f71cbd53119ebdc33e1e23702afc9)
+        ;
+
+        
+    
+    
+            var circle_marker_b42f438c8b9f5eab7c02b5f353f31b23 = L.circleMarker(
+                [31.813508, 35.230854],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7.733563897058823, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c4abaf6fc13f6ac817f840b67f91a641 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_02db29b707fcb86de2290dea5d6485d6 = $(`<div id="html_02db29b707fcb86de2290dea5d6485d6" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת דרך שועפאט - חאפז איברהים<br><b>מספר דגימות:</b> 51<br><b>זמן עצירה ממוצע:</b> 35 שניות<br><b>זמן עצירה מקסימלי:</b> 96 שניות</div>`)[0];
+                popup_c4abaf6fc13f6ac817f840b67f91a641.setContent(html_02db29b707fcb86de2290dea5d6485d6);
+            
+        
+
+        circle_marker_b42f438c8b9f5eab7c02b5f353f31b23.bindPopup(popup_c4abaf6fc13f6ac817f840b67f91a641)
+        ;
+
+        
+    
+    
+            var circle_marker_c8bbaea95efada22cc7a68ae75c92d5c = L.circleMarker(
+                [31.81443687, 35.22972034],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_1a7b5201517e16f71fd6a82f615dd5ff = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_3684d8b5b3b55c1b2b38afb49ec2313f = $(`<div id="html_3684d8b5b3b55c1b2b38afb49ec2313f" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> שועפאט<br><b>זמן עצירה ממוצע:</b> 16 שניות<br><b>זמן עצירה מקסימלי:</b> 49 שניות</div>`)[0];
+                popup_1a7b5201517e16f71fd6a82f615dd5ff.setContent(html_3684d8b5b3b55c1b2b38afb49ec2313f);
+            
+        
+
+        circle_marker_c8bbaea95efada22cc7a68ae75c92d5c.bindPopup(popup_1a7b5201517e16f71fd6a82f615dd5ff)
+        ;
+
+        
+    
+    
+            var circle_marker_66682f018ac95f28eccdd5864c84bd54 = L.circleMarker(
+                [31.814726, 35.229178],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_d2d6035560ee2ee807e020fe5b1e83f9 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_07b48eec74177a4be6649693f1a379bd = $(`<div id="html_07b48eec74177a4be6649693f1a379bd" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת דרך שועפאט - אל מעארי<br><b>מספר דגימות:</b> 67<br><b>זמן עצירה ממוצע:</b> 20 שניות<br><b>זמן עצירה מקסימלי:</b> 33 שניות</div>`)[0];
+                popup_d2d6035560ee2ee807e020fe5b1e83f9.setContent(html_07b48eec74177a4be6649693f1a379bd);
+            
+        
+
+        circle_marker_66682f018ac95f28eccdd5864c84bd54.bindPopup(popup_d2d6035560ee2ee807e020fe5b1e83f9)
+        ;
+
+        
+    
+    
+            var circle_marker_99c948f8b7a1969c0c6ccc00747473ed = L.circleMarker(
+                [31.817614, 35.228199],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_3523aa25461866436708b32260cf1c05 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_cdad8da48c5dfc54f129aacffca863c4 = $(`<div id="html_cdad8da48c5dfc54f129aacffca863c4" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת דרך שועפאט - אשאבי<br><b>מספר דגימות:</b> 13<br><b>זמן עצירה ממוצע:</b> 14 שניות<br><b>זמן עצירה מקסימלי:</b> 29 שניות</div>`)[0];
+                popup_3523aa25461866436708b32260cf1c05.setContent(html_cdad8da48c5dfc54f129aacffca863c4);
+            
+        
+
+        circle_marker_99c948f8b7a1969c0c6ccc00747473ed.bindPopup(popup_3523aa25461866436708b32260cf1c05)
+        ;
+
+        
+    
+    
+            var circle_marker_66b9849e411de3b9889d18bdf3ce2b51 = L.circleMarker(
+                [31.819227, 35.233626],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_32c97a4796c88a5cf19e1b278a47984a = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_01371cb034866736dd321e81e42cb9c7 = $(`<div id="html_01371cb034866736dd321e81e42cb9c7" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת יקותיאל אדם - עוזי נרקיס מזרח<br><b>מספר דגימות:</b> 2<br><b>זמן עצירה ממוצע:</b> 25 שניות<br><b>זמן עצירה מקסימלי:</b> 33 שניות</div>`)[0];
+                popup_32c97a4796c88a5cf19e1b278a47984a.setContent(html_01371cb034866736dd321e81e42cb9c7);
+            
+        
+
+        circle_marker_66b9849e411de3b9889d18bdf3ce2b51.bindPopup(popup_32c97a4796c88a5cf19e1b278a47984a)
+        ;
+
+        
+    
+    
+            var circle_marker_92161dcc3903a79b1feeb20d3802b1f4 = L.circleMarker(
+                [31.81931855, 35.23930785],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_1dca0f866f9415f08f4c94e6e521aee2 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_335b3e50849a4d8782858884ca1d07f3 = $(`<div id="html_335b3e50849a4d8782858884ca1d07f3" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> יקותיאל אדם<br><b>זמן עצירה ממוצע:</b> 19 שניות<br><b>זמן עצירה מקסימלי:</b> 147 שניות</div>`)[0];
+                popup_1dca0f866f9415f08f4c94e6e521aee2.setContent(html_335b3e50849a4d8782858884ca1d07f3);
+            
+        
+
+        circle_marker_92161dcc3903a79b1feeb20d3802b1f4.bindPopup(popup_1dca0f866f9415f08f4c94e6e521aee2)
+        ;
+
+        
+    
+    
+            var circle_marker_dfe4ea37185ba927d79edbf24266caa4 = L.circleMarker(
+                [31.819379, 35.232681],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_8c22884d1a06b4c339e26ba16a36c2ed = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_340764a2f5beae018a5eda251cfd168c = $(`<div id="html_340764a2f5beae018a5eda251cfd168c" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת יקותיאל אדם - עוזי נרקיס מערב<br><b>מספר דגימות:</b> 16<br><b>זמן עצירה ממוצע:</b> 17 שניות<br><b>זמן עצירה מקסימלי:</b> 38 שניות</div>`)[0];
+                popup_8c22884d1a06b4c339e26ba16a36c2ed.setContent(html_340764a2f5beae018a5eda251cfd168c);
+            
+        
+
+        circle_marker_dfe4ea37185ba927d79edbf24266caa4.bindPopup(popup_8c22884d1a06b4c339e26ba16a36c2ed)
+        ;
+
+        
+    
+    
+            var circle_marker_e3fac422493ea36c452995138668d130 = L.circleMarker(
+                [31.819382, 35.238544],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_9feb090592f98644614bb4b6d49366fb = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_8e242b4cdf5ed85c64b3f84c21fb2e28 = $(`<div id="html_8e242b4cdf5ed85c64b3f84c21fb2e28" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת יקותיאל אדם - דוד ניב<br><b>מספר דגימות:</b> 39<br><b>זמן עצירה ממוצע:</b> 30 שניות<br><b>זמן עצירה מקסימלי:</b> 155 שניות</div>`)[0];
+                popup_9feb090592f98644614bb4b6d49366fb.setContent(html_8e242b4cdf5ed85c64b3f84c21fb2e28);
+            
+        
+
+        circle_marker_e3fac422493ea36c452995138668d130.bindPopup(popup_9feb090592f98644614bb4b6d49366fb)
+        ;
+
+        
+    
+    
+            var circle_marker_034a2797699f19fcb2bcf2e331d0c427 = L.circleMarker(
+                [31.81967, 35.240099],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_40061002d2c0de77e3a25a66d5ca9b37 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_b1d73f422f00471e6bf2b5edbda5dbcd = $(`<div id="html_b1d73f422f00471e6bf2b5edbda5dbcd" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת משה דיין - יקותיאל אדם<br><b>מספר דגימות:</b> 14<br><b>זמן עצירה ממוצע:</b> 20 שניות<br><b>זמן עצירה מקסימלי:</b> 54 שניות</div>`)[0];
+                popup_40061002d2c0de77e3a25a66d5ca9b37.setContent(html_b1d73f422f00471e6bf2b5edbda5dbcd);
+            
+        
+
+        circle_marker_034a2797699f19fcb2bcf2e331d0c427.bindPopup(popup_40061002d2c0de77e3a25a66d5ca9b37)
+        ;
+
+        
+    
+    
+            var circle_marker_6bc83a8f85fe594aa29c591f55d23959 = L.circleMarker(
+                [31.8197369, 35.22907068],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c2c8a5978410faceee5d95602102376e = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_702bde527b9d9c3b1c83ab2a798ac5d2 = $(`<div id="html_702bde527b9d9c3b1c83ab2a798ac5d2" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> בית חנינא<br><b>זמן עצירה ממוצע:</b> 19 שניות<br><b>זמן עצירה מקסימלי:</b> 71 שניות</div>`)[0];
+                popup_c2c8a5978410faceee5d95602102376e.setContent(html_702bde527b9d9c3b1c83ab2a798ac5d2);
+            
+        
+
+        circle_marker_6bc83a8f85fe594aa29c591f55d23959.bindPopup(popup_c2c8a5978410faceee5d95602102376e)
+        ;
+
+        
+    
+    
+            var circle_marker_78574c7afc212ee6670755201139d06d = L.circleMarker(
+                [31.81974, 35.228347],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_f2b1f74b858f6f8757931a18e982836b = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_23393996e053e4f9e99bef33fa4436c2 = $(`<div id="html_23393996e053e4f9e99bef33fa4436c2" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת דרך שועפאט - יקותיאל אדם<br><b>מספר דגימות:</b> 5<br><b>זמן עצירה ממוצע:</b> 15 שניות<br><b>זמן עצירה מקסימלי:</b> 22 שניות</div>`)[0];
+                popup_f2b1f74b858f6f8757931a18e982836b.setContent(html_23393996e053e4f9e99bef33fa4436c2);
+            
+        
+
+        circle_marker_78574c7afc212ee6670755201139d06d.bindPopup(popup_f2b1f74b858f6f8757931a18e982836b)
+        ;
+
+        
+    
+    
+            var circle_marker_417777ba541a6cd17ca2d66a36c54d24 = L.circleMarker(
+                [31.821534, 35.239603],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_1d321c89d55e4a08d2dd4a499249caae = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_c1195d591a37ffcaeb4ace4f04b2ae81 = $(`<div id="html_c1195d591a37ffcaeb4ace4f04b2ae81" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת משה דיין - משה רחמילביץ<br><b>מספר דגימות:</b> 4<br><b>זמן עצירה ממוצע:</b> 12 שניות<br><b>זמן עצירה מקסימלי:</b> 16 שניות</div>`)[0];
+                popup_1d321c89d55e4a08d2dd4a499249caae.setContent(html_c1195d591a37ffcaeb4ace4f04b2ae81);
+            
+        
+
+        circle_marker_417777ba541a6cd17ca2d66a36c54d24.bindPopup(popup_1d321c89d55e4a08d2dd4a499249caae)
+        ;
+
+        
+    
+    
+            var circle_marker_8695b60ca589d52a246d0522a25df607 = L.circleMarker(
+                [31.82216, 35.238471],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_86008c97ede6c273828d8de724800e3a = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_4f25a0214012c39d26259cb9ae2537d2 = $(`<div id="html_4f25a0214012c39d26259cb9ae2537d2" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת משה דיין - יקותיאל אדם<br><b>מספר דגימות:</b> 2<br><b>זמן עצירה ממוצע:</b> 20 שניות<br><b>זמן עצירה מקסימלי:</b> 22 שניות</div>`)[0];
+                popup_86008c97ede6c273828d8de724800e3a.setContent(html_4f25a0214012c39d26259cb9ae2537d2);
+            
+        
+
+        circle_marker_8695b60ca589d52a246d0522a25df607.bindPopup(popup_86008c97ede6c273828d8de724800e3a)
+        ;
+
+        
+    
+    
+            var circle_marker_c5b09ffec2976ee473d655685c507845 = L.circleMarker(
+                [31.82332, 35.237492],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_f321c2335b609e8bbbb22bf5fd98cc93 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_210bc8e5a74dc2941eae805e25344298 = $(`<div id="html_210bc8e5a74dc2941eae805e25344298" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - פסגת זאב מרכז<br><b>מספר דגימות:</b> 85<br><b>זמן עצירה ממוצע:</b> 26 שניות<br><b>זמן עצירה מקסימלי:</b> 157 שניות</div>`)[0];
+                popup_f321c2335b609e8bbbb22bf5fd98cc93.setContent(html_210bc8e5a74dc2941eae805e25344298);
+            
+        
+
+        circle_marker_c5b09ffec2976ee473d655685c507845.bindPopup(popup_f321c2335b609e8bbbb22bf5fd98cc93)
+        ;
+
+        
+    
+    
+            var circle_marker_0520999ede6898d9bc504df9072a4f38 = L.circleMarker(
+                [31.82375442, 35.23762107],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_684956c1ec504e8bf2862dd54b3fed48 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_2946be6af5e0765271a1e882f514ece1 = $(`<div id="html_2946be6af5e0765271a1e882f514ece1" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> פסגת זאב – מרכז<br><b>זמן עצירה ממוצע:</b> 19 שניות<br><b>זמן עצירה מקסימלי:</b> 143 שניות</div>`)[0];
+                popup_684956c1ec504e8bf2862dd54b3fed48.setContent(html_2946be6af5e0765271a1e882f514ece1);
+            
+        
+
+        circle_marker_0520999ede6898d9bc504df9072a4f38.bindPopup(popup_684956c1ec504e8bf2862dd54b3fed48)
+        ;
+
+        
+    
+    
+            var circle_marker_0c4374b43c3142e5a039190fa1d2c0b7 = L.circleMarker(
+                [31.82408, 35.237669],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_26490d049c2d87acd9bb8c951b6ae30e = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_ba86e982181af8a6e33f8dfba38975b7 = $(`<div id="html_ba86e982181af8a6e33f8dfba38975b7" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - קניון הפסגה<br><b>מספר דגימות:</b> 10<br><b>זמן עצירה ממוצע:</b> 30 שניות<br><b>זמן עצירה מקסימלי:</b> 94 שניות</div>`)[0];
+                popup_26490d049c2d87acd9bb8c951b6ae30e.setContent(html_ba86e982181af8a6e33f8dfba38975b7);
+            
+        
+
+        circle_marker_0c4374b43c3142e5a039190fa1d2c0b7.bindPopup(popup_26490d049c2d87acd9bb8c951b6ae30e)
+        ;
+
+        
+    
+    
+            var circle_marker_59f21284d0dbd3617605ade85860ff1b = L.circleMarker(
+                [31.824556, 35.238193],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_d9ac29114425a242aa3c51980d40c4e7 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_52ca3891bf9f4889264769b8f1557886 = $(`<div id="html_52ca3891bf9f4889264769b8f1557886" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - שמואל עדן<br><b>מספר דגימות:</b> 4<br><b>זמן עצירה ממוצע:</b> 21 שניות<br><b>זמן עצירה מקסימלי:</b> 33 שניות</div>`)[0];
+                popup_d9ac29114425a242aa3c51980d40c4e7.setContent(html_52ca3891bf9f4889264769b8f1557886);
+            
+        
+
+        circle_marker_59f21284d0dbd3617605ade85860ff1b.bindPopup(popup_d9ac29114425a242aa3c51980d40c4e7)
+        ;
+
+        
+    
+    
+            var circle_marker_58eb76f452928cc2b1b752ab238ec6c6 = L.circleMarker(
+                [31.825646, 35.239839],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_175a13f31cddd839e7c878c2cddd19bc = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_a8960fc632f00a72e88061f713064990 = $(`<div id="html_a8960fc632f00a72e88061f713064990" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת משה דיין - שדרות דוכיפת<br><b>מספר דגימות:</b> 84<br><b>זמן עצירה ממוצע:</b> 23 שניות<br><b>זמן עצירה מקסימלי:</b> 39 שניות</div>`)[0];
+                popup_175a13f31cddd839e7c878c2cddd19bc.setContent(html_a8960fc632f00a72e88061f713064990);
+            
+        
+
+        circle_marker_58eb76f452928cc2b1b752ab238ec6c6.bindPopup(popup_175a13f31cddd839e7c878c2cddd19bc)
+        ;
+
+        
+    
+    
+            var circle_marker_cd79d2675912333ea52b56f1b33878b5 = L.circleMarker(
+                [31.82621757, 35.24030282],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_7b94f3e52bbb97ed391eea42d67a818d = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_843d8f2da0df24edec769b316381755e = $(`<div id="html_843d8f2da0df24edec769b316381755e" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> סיירת דוכיפת<br><b>זמן עצירה ממוצע:</b> 17 שניות<br><b>זמן עצירה מקסימלי:</b> 53 שניות</div>`)[0];
+                popup_7b94f3e52bbb97ed391eea42d67a818d.setContent(html_843d8f2da0df24edec769b316381755e);
+            
+        
+
+        circle_marker_cd79d2675912333ea52b56f1b33878b5.bindPopup(popup_7b94f3e52bbb97ed391eea42d67a818d)
+        ;
+
+        
+    
+    
+            var circle_marker_b49066b67ff47c9f11fdc95bb936150f = L.circleMarker(
+                [31.826492, 35.240349],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_8f0a70855442f4ad54c1e0eb9c87cb98 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_95f86b4e5a706b5532b2c04eef04d74f = $(`<div id="html_95f86b4e5a706b5532b2c04eef04d74f" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - סיירת דוכיפת<br><b>מספר דגימות:</b> 5<br><b>זמן עצירה ממוצע:</b> 19 שניות<br><b>זמן עצירה מקסימלי:</b> 22 שניות</div>`)[0];
+                popup_8f0a70855442f4ad54c1e0eb9c87cb98.setContent(html_95f86b4e5a706b5532b2c04eef04d74f);
+            
+        
+
+        circle_marker_b49066b67ff47c9f11fdc95bb936150f.bindPopup(popup_8f0a70855442f4ad54c1e0eb9c87cb98)
+        ;
+
+        
+    
+    
+            var circle_marker_e57eb99390ef914ebc63f649d8fc32f8 = L.circleMarker(
+                [31.827531, 35.240408],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_17d8446a7fd9427863703e92b4281334 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_32d51c3cafd95b15f261e1bac2a07917 = $(`<div id="html_32d51c3cafd95b15f261e1bac2a07917" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת משה דיין - השישה עשר<br><b>מספר דגימות:</b> 6<br><b>זמן עצירה ממוצע:</b> 12 שניות<br><b>זמן עצירה מקסימלי:</b> 15 שניות</div>`)[0];
+                popup_17d8446a7fd9427863703e92b4281334.setContent(html_32d51c3cafd95b15f261e1bac2a07917);
+            
+        
+
+        circle_marker_e57eb99390ef914ebc63f649d8fc32f8.bindPopup(popup_17d8446a7fd9427863703e92b4281334)
+        ;
+
+        
+    
+    
+            var circle_marker_29c72a842f40f3b79decc7fac4c43aca = L.circleMarker(
+                [31.828711, 35.239481],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7.48839, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_e7cb0aabcf60db9b43cdbc3ccd47fb20 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_0aae79d6e092e8706ee35c499481dc7d = $(`<div id="html_0aae79d6e092e8706ee35c499481dc7d" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> A2<br><b>מספר דגימות:</b> 19<br><b>זמן עצירה ממוצע:</b> 34 שניות<br><b>זמן עצירה מקסימלי:</b> 133 שניות</div>`)[0];
+                popup_e7cb0aabcf60db9b43cdbc3ccd47fb20.setContent(html_0aae79d6e092e8706ee35c499481dc7d);
+            
+        
+
+        circle_marker_29c72a842f40f3b79decc7fac4c43aca.bindPopup(popup_e7cb0aabcf60db9b43cdbc3ccd47fb20)
+        ;
+
+        
+    
+    
+            var circle_marker_893f88c5c8266bfadf7c0a9be2bf671c = L.circleMarker(
+                [31.8289, 35.238789],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 15.0, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_12841115064b295afde70f3a1d54926d = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_1752bcb008d593f952b5b51d136f923d = $(`<div id="html_1752bcb008d593f952b5b51d136f923d" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מעבר חצייה - חיל האוויר<br><b>מספר דגימות:</b> 3<br><b>זמן עצירה ממוצע:</b> 68 שניות<br><b>זמן עצירה מקסימלי:</b> 133 שניות</div>`)[0];
+                popup_12841115064b295afde70f3a1d54926d.setContent(html_1752bcb008d593f952b5b51d136f923d);
+            
+        
+
+        circle_marker_893f88c5c8266bfadf7c0a9be2bf671c.bindPopup(popup_12841115064b295afde70f3a1d54926d)
+        ;
+
+        
+    
+    
+            var circle_marker_79155b5511684124d22eb7a3f97d6462 = L.circleMarker(
+                [31.82898709, 35.23841348],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 8.80842044117647, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_d7e99b2cb2d87c371d3de1b3410d0183 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_ff57e89e28c2f32386661cd1f9589174 = $(`<div id="html_ff57e89e28c2f32386661cd1f9589174" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> חיל האוויר<br><b>זמן עצירה ממוצע:</b> 40 שניות<br><b>זמן עצירה מקסימלי:</b> 133 שניות</div>`)[0];
+                popup_d7e99b2cb2d87c371d3de1b3410d0183.setContent(html_ff57e89e28c2f32386661cd1f9589174);
+            
+        
+
+        circle_marker_79155b5511684124d22eb7a3f97d6462.bindPopup(popup_d7e99b2cb2d87c371d3de1b3410d0183)
+        ;
+
+        
+    
+    
+            var circle_marker_18b378eecc52ce7dd13e9791823bed42 = L.circleMarker(
+                [31.829044, 35.237816],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 10.088507426470589, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_84452fdda100086eed4be6d71adf7656 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_c4d1fe765077152b577212a333f70570 = $(`<div id="html_c4d1fe765077152b577212a333f70570" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שדרות משה דיין - נתיב המזלות<br><b>מספר דגימות:</b> 162<br><b>זמן עצירה ממוצע:</b> 46 שניות<br><b>זמן עצירה מקסימלי:</b> 180 שניות</div>`)[0];
+                popup_84452fdda100086eed4be6d71adf7656.setContent(html_c4d1fe765077152b577212a333f70570);
+            
+        
+
+        circle_marker_18b378eecc52ce7dd13e9791823bed42.bindPopup(popup_84452fdda100086eed4be6d71adf7656)
+        ;
+
+        
+    
+    
+            var circle_marker_6e7941e23757b16c3cf21f76ee33bac1 = L.circleMarker(
+                [31.830141, 35.236783],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_10876131e6c50452f2f96a3556c9023e = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_351b7de24b1d88497bccc98091b61f7b = $(`<div id="html_351b7de24b1d88497bccc98091b61f7b" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שדרות משה דיין - מרכז מסחרי<br><b>מספר דגימות:</b> 55<br><b>זמן עצירה ממוצע:</b> 14 שניות<br><b>זמן עצירה מקסימלי:</b> 39 שניות</div>`)[0];
+                popup_10876131e6c50452f2f96a3556c9023e.setContent(html_351b7de24b1d88497bccc98091b61f7b);
+            
+        
+
+        circle_marker_6e7941e23757b16c3cf21f76ee33bac1.bindPopup(popup_10876131e6c50452f2f96a3556c9023e)
+        ;
+
+        
+    
+    
+            var circle_marker_d34452583e5a9486fb2d0ea0efc10597 = L.circleMarker(
+                [31.832315, 35.234722],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_2be51acb103822571810f0e909e48e48 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_fdb82c9dd998120114504f5187e0885b = $(`<div id="html_fdb82c9dd998120114504f5187e0885b" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שדרות משה דיין - שמחה הולטסברג<br><b>מספר דגימות:</b> 10<br><b>זמן עצירה ממוצע:</b> 15 שניות<br><b>זמן עצירה מקסימלי:</b> 22 שניות</div>`)[0];
+                popup_2be51acb103822571810f0e909e48e48.setContent(html_fdb82c9dd998120114504f5187e0885b);
+            
+        
+
+        circle_marker_d34452583e5a9486fb2d0ea0efc10597.bindPopup(popup_2be51acb103822571810f0e909e48e48)
+        ;
+
+        
+    
+    
+            var circle_marker_802b39d849b4dab477bd20f225243940 = L.circleMarker(
+                [31.832972, 35.234674],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_748ef82ef75c5c64aa3e924fb7bba4ab = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_ecfc5daff7a2e68731429dafdc0746e2 = $(`<div id="html_ecfc5daff7a2e68731429dafdc0746e2" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שדרות משה דיין - מזל שור<br><b>מספר דגימות:</b> 4<br><b>זמן עצירה ממוצע:</b> 14 שניות<br><b>זמן עצירה מקסימלי:</b> 16 שניות</div>`)[0];
+                popup_748ef82ef75c5c64aa3e924fb7bba4ab.setContent(html_ecfc5daff7a2e68731429dafdc0746e2);
+            
+        
+
+        circle_marker_802b39d849b4dab477bd20f225243940.bindPopup(popup_748ef82ef75c5c64aa3e924fb7bba4ab)
+        ;
+
+        
+    
+    
+            var circle_marker_2a5e60ba18346192a7bd278a3f51b4f8 = L.circleMarker(
+                [31.8334612, 35.234697],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_5bf9271983c02de6f1889f2e61d7c75b = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_8dd658eaee264e57e4d4ba12fb4ca263 = $(`<div id="html_8dd658eaee264e57e4d4ba12fb4ca263" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> משה דיין – צפון<br><b>זמן עצירה ממוצע:</b> 15 שניות<br><b>זמן עצירה מקסימלי:</b> 48 שניות</div>`)[0];
+                popup_5bf9271983c02de6f1889f2e61d7c75b.setContent(html_8dd658eaee264e57e4d4ba12fb4ca263);
+            
+        
+
+        circle_marker_2a5e60ba18346192a7bd278a3f51b4f8.bindPopup(popup_5bf9271983c02de6f1889f2e61d7c75b)
+        ;
+
+        
+    
+    
+            var circle_marker_c6b95f2898bbcade2a46324d5928a222 = L.circleMarker(
+                [31.835423, 35.233952],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_2e3d2966d3650d24bdac82189cd42b89 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_41dcd85628dc441bc6772e3f8d68f1ac = $(`<div id="html_41dcd85628dc441bc6772e3f8d68f1ac" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שדרות משה דיין - מזל טלה<br><b>מספר דגימות:</b> 6<br><b>זמן עצירה ממוצע:</b> 16 שניות<br><b>זמן עצירה מקסימלי:</b> 21 שניות</div>`)[0];
+                popup_2e3d2966d3650d24bdac82189cd42b89.setContent(html_41dcd85628dc441bc6772e3f8d68f1ac);
+            
+        
+
+        circle_marker_c6b95f2898bbcade2a46324d5928a222.bindPopup(popup_2e3d2966d3650d24bdac82189cd42b89)
+        ;
+
+        
+    
+    
+            var circle_marker_c74fe467d993c20fcd17fd3c8cb507a7 = L.circleMarker(
+                [31.836958, 35.234065],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_6e3e6b002288b34e806fd03881dc4dd5 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_657665b48fd53b288fdcdbe19ccd250a = $(`<div id="html_657665b48fd53b288fdcdbe19ccd250a" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שדרות משה דיין - מוזניים<br><b>מספר דגימות:</b> 47<br><b>זמן עצירה ממוצע:</b> 25 שניות<br><b>זמן עצירה מקסימלי:</b> 50 שניות</div>`)[0];
+                popup_6e3e6b002288b34e806fd03881dc4dd5.setContent(html_657665b48fd53b288fdcdbe19ccd250a);
+            
+        
+
+        circle_marker_c74fe467d993c20fcd17fd3c8cb507a7.bindPopup(popup_6e3e6b002288b34e806fd03881dc4dd5)
+        ;
+
+        
+    
+    
+            var circle_marker_fcccd61fe546985576c36f95bf453b24 = L.circleMarker(
+                [31.8373113, 35.2341856],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_5b21ad3fcab3da0978b2a5abe9839e63 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_69d9e66186499a3b79bcaca464444d75 = $(`<div id="html_69d9e66186499a3b79bcaca464444d75" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> מזל קשת <br><b>זמן עצירה ממוצע:</b> 16 שניות<br><b>זמן עצירה מקסימלי:</b> 61 שניות</div>`)[0];
+                popup_5b21ad3fcab3da0978b2a5abe9839e63.setContent(html_69d9e66186499a3b79bcaca464444d75);
+            
+        
+
+        circle_marker_fcccd61fe546985576c36f95bf453b24.bindPopup(popup_5b21ad3fcab3da0978b2a5abe9839e63)
+        ;
+
+        
+    
+    
+            var circle_marker_57c64a607e36fe2163bf9bc1a8309ae6 = L.circleMarker(
+                [31.837859, 35.234302],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_0d6c28d3e90e337a57eafc95cb039ae4 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_033caedd30a6e00ee9b01523407d0fa5 = $(`<div id="html_033caedd30a6e00ee9b01523407d0fa5" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שדרות נווה יעקב - שדרות משה דיין<br><b>מספר דגימות:</b> 78<br><b>זמן עצירה ממוצע:</b> 20 שניות<br><b>זמן עצירה מקסימלי:</b> 33 שניות</div>`)[0];
+                popup_0d6c28d3e90e337a57eafc95cb039ae4.setContent(html_033caedd30a6e00ee9b01523407d0fa5);
+            
+        
+
+        circle_marker_57c64a607e36fe2163bf9bc1a8309ae6.bindPopup(popup_0d6c28d3e90e337a57eafc95cb039ae4)
+        ;
+
+        
+    
+    
+            var circle_marker_084a05ced5b32eefa14051f1e9b2bf4f = L.circleMarker(
+                [31.838041, 35.238133],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_bfa39f3430a609418f09e86b12006e99 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_6ebdebc55d08ddd2ba244ce1ea8732bc = $(`<div id="html_6ebdebc55d08ddd2ba244ce1ea8732bc" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שדרות נווה יעקב - יצחק טבנקין<br><b>מספר דגימות:</b> 46<br><b>זמן עצירה ממוצע:</b> 30 שניות<br><b>זמן עצירה מקסימלי:</b> 66 שניות</div>`)[0];
+                popup_bfa39f3430a609418f09e86b12006e99.setContent(html_6ebdebc55d08ddd2ba244ce1ea8732bc);
+            
+        
+
+        circle_marker_084a05ced5b32eefa14051f1e9b2bf4f.bindPopup(popup_bfa39f3430a609418f09e86b12006e99)
+        ;
+
+        
+    
+    
+            var circle_marker_174988ca7e0efc36cb4f85ab505f361d = L.circleMarker(
+                [31.8380742, 35.2376415],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_74079eb4f156ce5e1309409cd8ef3a5a = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_48166bc67e82ea53dd4087c804920219 = $(`<div id="html_48166bc67e82ea53dd4087c804920219" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> יצחק טבנקין<br><b>זמן עצירה ממוצע:</b> 17 שניות<br><b>זמן עצירה מקסימלי:</b> 103 שניות</div>`)[0];
+                popup_74079eb4f156ce5e1309409cd8ef3a5a.setContent(html_48166bc67e82ea53dd4087c804920219);
+            
+        
+
+        circle_marker_174988ca7e0efc36cb4f85ab505f361d.bindPopup(popup_74079eb4f156ce5e1309409cd8ef3a5a)
+        ;
+
+        
+    
+    
+            var circle_marker_92f3338f724392e3b192728309eedfdb = L.circleMarker(
+                [31.838225, 35.235579],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_fc2fe7d60b5282db3fc9ee01ba027947 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_14939a5a0e76bcb3046d4f415784846c = $(`<div id="html_14939a5a0e76bcb3046d4f415784846c" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שדרות נווה יעקב - אבא אחימאיר<br><b>מספר דגימות:</b> 29<br><b>זמן עצירה ממוצע:</b> 22 שניות<br><b>זמן עצירה מקסימלי:</b> 39 שניות</div>`)[0];
+                popup_fc2fe7d60b5282db3fc9ee01ba027947.setContent(html_14939a5a0e76bcb3046d4f415784846c);
+            
+        
+
+        circle_marker_92f3338f724392e3b192728309eedfdb.bindPopup(popup_fc2fe7d60b5282db3fc9ee01ba027947)
+        ;
+
+        
+    
+    
+            var circle_marker_2a6a16308fd48ffa12b6f276d44caffa = L.circleMarker(
+                [31.840554, 35.240233],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_4c31ee8bd18655c25a93129675f4bc2c = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_0c31b6b4707337deb04d286cec295ca5 = $(`<div id="html_0c31b6b4707337deb04d286cec295ca5" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> צומת שדרות נווה יעקב - מעגלות הרב פרדס (דרום)<br><b>מספר דגימות:</b> 132<br><b>זמן עצירה ממוצע:</b> 25 שניות<br><b>זמן עצירה מקסימלי:</b> 150 שניות</div>`)[0];
+                popup_4c31ee8bd18655c25a93129675f4bc2c.setContent(html_0c31b6b4707337deb04d286cec295ca5);
+            
+        
+
+        circle_marker_2a6a16308fd48ffa12b6f276d44caffa.bindPopup(popup_4c31ee8bd18655c25a93129675f4bc2c)
+        ;
+
+        
+    
+    
+            var circle_marker_983b3bbc76e1359b4c498c15f596b99f = L.circleMarker(
+                [31.8410553, 35.2402506],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "green", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 8.739130367647059, "stroke": true, "weight": 3}
+            ).addTo(map_e96014b1a9d978e67686ccfc01ed7859);
+        
+    
+        var popup_c83c17624e4bd6f66a40b6b8ca005338 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_1b720eecec1ca029dcd2d4bdcb73b3b9 = $(`<div id="html_1b720eecec1ca029dcd2d4bdcb73b3b9" style="width: 100.0%; height: 100.0%;"><b>מיקום:</b> נווה יעקב – צפון<br><b>זמן עצירה ממוצע:</b> 40 שניות<br><b>זמן עצירה מקסימלי:</b> 165 שניות</div>`)[0];
+                popup_c83c17624e4bd6f66a40b6b8ca005338.setContent(html_1b720eecec1ca029dcd2d4bdcb73b3b9);
+            
+        
+
+        circle_marker_983b3bbc76e1359b4c498c15f596b99f.bindPopup(popup_c83c17624e4bd6f66a40b6b8ca005338)
+        ;
+
+        
+    
+</script>
+</html>
